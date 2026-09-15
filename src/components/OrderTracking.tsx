@@ -11,6 +11,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+const REFRESH_INTERVAL_MS = 30_000;
+
 const STATUS_SEQUENCE = [
   "Pending",
   "Accepted",
@@ -115,13 +117,29 @@ export default function OrderTracking({ token }: { token: string }) {
     };
   }, [token]);
 
+  useEffect(() => {
+    const interval = window.setInterval(async () => {
+      try {
+        const response = await fetch(`/api/tracking/${encodeURIComponent(token)}`);
+        const data = await response.json().catch(() => null);
+        if (response.ok && data?.success) {
+          setOrder(data.order);
+        }
+      } catch {
+        // Keep showing the last known status if a refresh fails.
+      }
+    }, REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(interval);
+  }, [token]);
+
   const currentIndex = order
     ? STATUS_SEQUENCE.findIndex((status) => status === order.order_status)
     : -1;
   const isCancelled = order?.order_status === "Cancelled";
+  const isDeclined = order?.order_status === "Rejected";
 
   return (
-    <div className="flex min-h-screen flex-col bg-brand-50">
+    <div className="flex min-h-dvh flex-col bg-brand-50">
       <header className="border-b border-brand-900/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">
@@ -188,9 +206,11 @@ export default function OrderTracking({ token }: { token: string }) {
                     className={`rounded-full px-4 py-1.5 text-sm font-bold ${
                       isCancelled
                         ? "bg-red-100 text-red-600"
-                        : currentIndex >= STATUS_SEQUENCE.length - 1
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-brand-100 text-brand-700"
+                        : isDeclined
+                          ? "bg-rose-100 text-rose-600"
+                          : currentIndex >= STATUS_SEQUENCE.length - 1
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-brand-100 text-brand-700"
                     }`}
                   >
                     {order.order_status}
@@ -219,6 +239,13 @@ export default function OrderTracking({ token }: { token: string }) {
                     <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
                     <p className="text-sm leading-relaxed text-red-700">
                       This order has been cancelled. Contact FRESCO if you have questions.
+                    </p>
+                  </div>
+                ) : isDeclined ? (
+                  <div className="mt-5 flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3.5">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-500" />
+                    <p className="text-sm leading-relaxed text-rose-700">
+                      This order was not accepted. Contact FRESCO if you have questions.
                     </p>
                   </div>
                 ) : null}
@@ -278,6 +305,9 @@ export default function OrderTracking({ token }: { token: string }) {
                 </p>
                 <p className="mt-2 font-mono text-base font-bold text-slate-900">
                   {order.tracking_token}
+                </p>
+                <p className="mt-3 text-xs font-medium text-slate-400">
+                  This page updates automatically every 30 seconds.
                 </p>
               </div>
             </div>

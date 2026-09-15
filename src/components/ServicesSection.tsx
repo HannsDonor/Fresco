@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { RefreshCw } from "lucide-react";
+import { reportLandingLoad, subscribeLandingRetry } from "@/lib/landingData";
 import {
   WashingMachine,
   Droplets,
@@ -75,6 +77,7 @@ export default function ServicesSection() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,21 +90,37 @@ export default function ServicesSection() {
         if (cancelled) return;
         if (!response.ok || !data?.success) {
           setError(true);
+          reportLandingLoad("services", false);
           return;
         }
         setServices(data.services ?? []);
+        reportLandingLoad("services", true);
       } catch {
         if (!cancelled) setError(true);
+        reportLandingLoad("services", false);
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
     loadServices();
+    const unsubscribeRetry = subscribeLandingRetry(() => {
+      if (cancelled) return;
+      setError(false);
+      setLoading(true);
+      setReloadTick((tick) => tick + 1);
+    });
     return () => {
       cancelled = true;
+      unsubscribeRetry();
     };
-  }, []);
+  }, [reloadTick]);
+
+  function retry() {
+    setError(false);
+    setLoading(true);
+    setReloadTick((tick) => tick + 1);
+  }
 
   return (
     <section id="services" className="bg-white py-20 lg:py-28">
@@ -130,6 +149,14 @@ export default function ServicesSection() {
             <p className="text-base font-medium text-slate-600">
               Unable to load services at the moment.
             </p>
+            <button
+              type="button"
+              onClick={retry}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Try Again
+            </button>
           </div>
         ) : services.length === 0 ? (
           <div className="mt-14 rounded-3xl bg-brand-50/70 px-6 py-16 text-center ring-1 ring-brand-100">

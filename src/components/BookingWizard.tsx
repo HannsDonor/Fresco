@@ -158,6 +158,13 @@ function formatPickupDisplay(date: string, time: string): string {
   return `${dateLabel} at ${timeLabel}`;
 }
 
+function blurActiveElement() {
+  const active = document.activeElement;
+  if (active && active instanceof HTMLElement && active !== document.body) {
+    active.blur();
+  }
+}
+
 export default function BookingWizard({ initialServiceId }: { initialServiceId?: number }) {
   const router = useRouter();
 
@@ -232,14 +239,14 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     ][new Date(`${form.pickupDate}T00:00:00`).getDay()];
 
     const hours = shop?.[`${dayKey}_hours` as keyof ShopInfo] as string | null;
+    if (!hours) return [];
+
     let openMinutes = 8 * 60;
     let closeMinutes = 18 * 60;
 
-    if (hours) {
-      const [openLabel, closeLabel] = hours.split("–");
-      if (openLabel) openMinutes = parseHourLabel(openLabel.trim());
-      if (closeLabel) closeMinutes = parseHourLabel(closeLabel.trim());
-    }
+    const [openLabel, closeLabel] = hours.split("–");
+    if (openLabel) openMinutes = parseHourLabel(openLabel.trim());
+    if (closeLabel) closeMinutes = parseHourLabel(closeLabel.trim());
 
     const slots: string[] = [];
     for (let minutes = openMinutes; minutes <= closeMinutes; minutes += 30) {
@@ -301,11 +308,16 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   }
 
   function continueStep() {
-    if (validateStep(step)) setStep((value) => Math.min(value + 1, 4));
+    blurActiveElement();
+    if (validateStep(step)) {
+      setStep((value) => Math.min(value + 1, 4));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
 
   function backStep() {
     setStep((value) => Math.max(value - 1, 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function submitOrder() {
@@ -353,7 +365,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   const submitDisabled = submitting || !selectedService;
 
   return (
-    <div className="flex min-h-screen flex-col bg-brand-50">
+    <div className="flex min-h-dvh flex-col bg-brand-50">
       <header className="border-b border-brand-900/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">
@@ -626,7 +638,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                         >
                           <span className="block text-base font-extrabold">{loadType}</span>
                           <span
-                            className={`mt-1 block text-xs font-medium ${
+                            className={`mt-1 hidden text-xs font-medium sm:block ${
                               selected ? "text-brand-50" : "text-slate-500"
                             }`}
                           >
@@ -705,7 +717,9 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       })
                     ) : (
                       <p className="px-2 py-2 text-sm text-slate-500">
-                        Choose a pickup date to see available times.
+                        {form.pickupDate
+                          ? "The shop is closed on this day. Please choose another date."
+                          : "Choose a pickup date to see available times."}
                       </p>
                     )}
                   </div>
@@ -802,19 +816,20 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
               </div>
             ) : null}
 
-            <div className="mt-9 flex items-center justify-between gap-3">
+            <div className="mt-9 flex flex-wrap items-center justify-between gap-3">
               {step === 1 ? (
                 <Link
                   href="/"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-800"
+                  className="inline-flex min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-800 sm:flex-none"
                 >
                   Cancel
                 </Link>
               ) : (
                 <button
                   type="button"
+                  onPointerDown={blurActiveElement}
                   onClick={backStep}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-800"
+                  className="inline-flex touch-manipulation min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-800 sm:flex-none"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back
@@ -824,8 +839,9 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
               {step < 4 ? (
                 <button
                   type="button"
+                  onPointerDown={blurActiveElement}
                   onClick={continueStep}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600"
+                  className="inline-flex touch-manipulation min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 sm:flex-none"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
@@ -833,9 +849,10 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
               ) : (
                 <button
                   type="button"
+                  onPointerDown={blurActiveElement}
                   onClick={submitOrder}
                   disabled={submitDisabled}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-brand-500 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="inline-flex touch-manipulation min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70 sm:flex-none sm:px-7"
                 >
                   {submitting ? (
                     <>

@@ -1,14 +1,23 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { WashingMachine, ChevronLeft } from "lucide-react";
 import AdminLoginForm from "@/components/AdminLoginForm";
+import { getSession } from "@/lib/auth";
 
 export const metadata = {
   title: "Admin Login | Fresco",
 };
 
-export default function AdminLoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminLoginPage() {
+  const session = await getSession();
+  if (session) {
+    redirect("/admin");
+  }
+
   return (
-    <div className="flex min-h-screen flex-col bg-brand-50 text-slate-900">
+    <div className="flex min-h-dvh flex-col bg-brand-50 text-slate-900">
       <header className="border-b border-black/5 bg-white/80 backdrop-blur">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">

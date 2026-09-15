@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, Phone, Mail, MapPin, Navigation } from "lucide-react";
+import { Clock, Phone, Mail, MapPin, Navigation, RefreshCw } from "lucide-react";
+import { reportLandingLoad, subscribeLandingRetry } from "@/lib/landingData";
 
 interface ShopInfo {
   shop_name: string;
@@ -26,25 +27,26 @@ const weekdays = [
 ] as const;
 
 function operatingHours(info: ShopInfo): [string, string][] {
-  const days = weekdays.map((day) => info[day]);
-  const allSame = days.every((hours) => hours && hours === days[0]);
+  const days = weekdays.map((day) => info[day] ?? null);
+  const first = days[0];
+  const allSame = first !== null && days.every((hours) => hours === first);
 
   if (allSame) {
     return [
-      ["Monday – Friday", days[0] ?? ""],
-      ["Saturday", info.saturday_hours ?? ""],
-      ["Sunday", info.sunday_hours ?? ""],
+      ["Monday – Friday", first],
+      ["Saturday", info.saturday_hours ?? "Closed"],
+      ["Sunday", info.sunday_hours ?? "Closed"],
     ];
   }
 
   return [
-    ["Monday", info.monday_hours ?? ""],
-    ["Tuesday", info.tuesday_hours ?? ""],
-    ["Wednesday", info.wednesday_hours ?? ""],
-    ["Thursday", info.thursday_hours ?? ""],
-    ["Friday", info.friday_hours ?? ""],
-    ["Saturday", info.saturday_hours ?? ""],
-    ["Sunday", info.sunday_hours ?? ""],
+    ["Monday", info.monday_hours ?? "Closed"],
+    ["Tuesday", info.tuesday_hours ?? "Closed"],
+    ["Wednesday", info.wednesday_hours ?? "Closed"],
+    ["Thursday", info.thursday_hours ?? "Closed"],
+    ["Friday", info.friday_hours ?? "Closed"],
+    ["Saturday", info.saturday_hours ?? "Closed"],
+    ["Sunday", info.sunday_hours ?? "Closed"],
   ];
 }
 
@@ -73,6 +75,7 @@ export default function ShopInformation() {
   const [info, setInfo] = useState<ShopInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,21 +88,37 @@ export default function ShopInformation() {
         if (cancelled) return;
         if (!response.ok || !data?.success) {
           setError(true);
+          reportLandingLoad("shop-info", false);
           return;
         }
         setInfo(data.data ?? null);
+        reportLandingLoad("shop-info", true);
       } catch {
         if (!cancelled) setError(true);
+        reportLandingLoad("shop-info", false);
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
     loadShop();
+    const unsubscribeRetry = subscribeLandingRetry(() => {
+      if (cancelled) return;
+      setError(false);
+      setLoading(true);
+      setReloadTick((tick) => tick + 1);
+    });
     return () => {
       cancelled = true;
+      unsubscribeRetry();
     };
-  }, []);
+  }, [reloadTick]);
+
+  function retry() {
+    setError(false);
+    setLoading(true);
+    setReloadTick((tick) => tick + 1);
+  }
 
   return (
     <section id="contact" className="bg-white py-20 lg:py-28">
@@ -124,6 +143,14 @@ export default function ShopInformation() {
             <p className="text-base font-medium text-slate-600">
               Unable to load shop information.
             </p>
+            <button
+              type="button"
+              onClick={retry}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Try Again
+            </button>
           </div>
         ) : (
           <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

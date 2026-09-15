@@ -32,7 +32,7 @@ export default function TrackLookup() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-brand-50">
+    <div className="flex min-h-dvh flex-col bg-brand-50">
       <header className="border-b border-brand-900/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">

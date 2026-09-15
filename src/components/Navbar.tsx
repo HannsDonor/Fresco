@@ -65,6 +65,13 @@ export default function Navbar() {
 
       {open ? (
         <div className="border-t border-slate-100 bg-white px-5 pb-6 pt-3 lg:hidden">
+          <Link
+            href="/book"
+            onClick={() => setOpen(false)}
+            className="mb-3 flex w-full items-center justify-center rounded-xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/25"
+          >
+            Book a Laundry Service
+          </Link>
           <div className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link

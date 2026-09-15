@@ -7,6 +7,7 @@ export const LAUNDRY_STATUSES = [
   "Ready for Pickup",
   "Completed",
   "Cancelled",
+  "Rejected",
 ] as const;
 
 export type LaundryStatus = (typeof LAUNDRY_STATUSES)[number];
@@ -26,5 +27,29 @@ export const PAYMENT_METHODS = ["Cash", "GCash"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const PAYMENT_STATUSES = ["Unpaid", "Paid"] as const;
+
+export const SERVICE_ICONS = [
+  "check-circle",
+  "cloud",
+  "sparkles",
+  "wash",
+  "droplets",
+  "wind",
+  "bed",
+  "shirt",
+  "iron",
+] as const;
+
+export const SHOP_DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+export type ShopDay = (typeof SHOP_DAYS)[number];
 
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];

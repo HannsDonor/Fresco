@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
+import { cookies } from "next/headers";
+import { createSessionToken, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +42,18 @@ export async function POST(request: Request) {
     if (!match) {
       return NextResponse.json({ success: false, error: "Invalid credentials." }, { status: 401 });
     }
+
+    const token = createSessionToken({
+      admin_id: admin.admin_id,
+      name: admin.name,
+      username: admin.username,
+    });
+    (await cookies()).set(SESSION_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: SESSION_MAX_AGE,
+    });
 
     return NextResponse.json({
       success: true,

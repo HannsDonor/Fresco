@@ -26,14 +26,14 @@ export default function Hero() {
           <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
             <Link
               href="/book"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-brand-500 px-7 py-4 text-base font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-7 py-4 text-base font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 sm:w-auto"
             >
               <Plus className="h-5 w-5" strokeWidth={2.5} />
               Book a Laundry Service
             </Link>
             <Link
               href="/tracking"
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-7 py-4 text-base font-semibold text-slate-800 transition-colors hover:border-brand-300 hover:text-brand-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-7 py-4 text-base font-semibold text-slate-800 transition-colors hover:border-brand-300 hover:text-brand-700 sm:w-auto"
             >
               <Radar className="h-5 w-5" />
               Track My Laundry

@@ -14,7 +14,7 @@ export default function PlaceholderPage({
   description,
 }: PlaceholderPageProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-white text-slate-900">
+    <div className="flex min-h-dvh flex-col bg-white text-slate-900">
       <header className="border-b border-slate-900/5 bg-white">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">

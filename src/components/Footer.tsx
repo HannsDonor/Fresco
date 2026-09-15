@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { WashingMachine, Radar, Phone, Mail, MapPin } from "lucide-react";
+import { subscribeLandingRetry } from "@/lib/landingData";
 
 interface Service {
   service_id: number;
@@ -50,8 +51,12 @@ export default function Footer() {
     }
 
     loadFooter();
+    const unsubscribeRetry = subscribeLandingRetry(() => {
+      if (!cancelled) loadFooter();
+    });
     return () => {
       cancelled = true;
+      unsubscribeRetry();
     };
   }, []);
 

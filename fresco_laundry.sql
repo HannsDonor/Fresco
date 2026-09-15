@@ -83,7 +83,7 @@ CREATE TABLE `laundry_orders` (
   `special_instructions` text DEFAULT NULL,
   `pickup_date` date NOT NULL,
   `pickup_time` time NOT NULL,
-  `order_status` enum('Pending','Accepted','Washing','Drying','Folding','Ready for Pickup','Completed','Cancelled') NOT NULL DEFAULT 'Pending',
+  `order_status` enum('Pending','Accepted','In Progress','Ready for Pickup','Completed','Cancelled','Rejected') NOT NULL DEFAULT 'Pending',
   `total_amount` decimal(10,2) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -135,9 +135,9 @@ INSERT INTO `order_status_history` (`status_id`, `order_id`, `status`, `note`, `
 (3, 2, 'Pending', 'Laundry request submitted by customer.', '2026-09-15 04:43:01'),
 (4, 1, 'Accepted', NULL, '2026-09-15 04:43:44'),
 (5, 2, 'Accepted', NULL, '2026-09-15 04:47:17'),
-(6, 2, 'Washing', NULL, '2026-09-15 04:47:36'),
-(7, 2, 'Drying', NULL, '2026-09-15 04:48:01'),
-(8, 2, 'Folding', NULL, '2026-09-15 04:48:12'),
+(6, 2, 'In Progress', NULL, '2026-09-15 04:47:36'),
+(7, 2, 'In Progress', NULL, '2026-09-15 04:48:01'),
+(8, 2, 'In Progress', NULL, '2026-09-15 04:48:12'),
 (9, 2, 'Ready for Pickup', NULL, '2026-09-15 04:48:22'),
 (10, 2, 'Completed', NULL, '2026-09-15 04:48:32');
 

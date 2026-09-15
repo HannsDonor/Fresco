@@ -1,9 +1,7 @@
 export const LAUNDRY_STATUSES = [
   "Pending",
   "Accepted",
-  "Washing",
-  "Drying",
-  "Folding",
+  "In Progress",
   "Ready for Pickup",
   "Completed",
   "Cancelled",

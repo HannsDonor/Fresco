@@ -9,13 +9,11 @@ interface StatusColor {
 export const STATUS_SEQUENCE: Record<LaundryStatus, number> = {
   Pending: 0,
   Accepted: 1,
-  Washing: 2,
-  Drying: 3,
-  Folding: 4,
-  "Ready for Pickup": 5,
-  Completed: 6,
-  Cancelled: 7,
-  Rejected: 8,
+  "In Progress": 2,
+  "Ready for Pickup": 3,
+  Completed: 4,
+  Cancelled: 5,
+  Rejected: 6,
 };
 
 export const STATUS_COLORS: Record<LaundryStatus, StatusColor> = {
@@ -29,20 +27,10 @@ export const STATUS_COLORS: Record<LaundryStatus, StatusColor> = {
     bar: "bg-brand-500",
     badge: "bg-brand-100 text-brand-700",
   },
-  Washing: {
+  "In Progress": {
     dot: "bg-sky-500",
     bar: "bg-sky-500",
     badge: "bg-sky-100 text-sky-700",
-  },
-  Drying: {
-    dot: "bg-violet-500",
-    bar: "bg-violet-500",
-    badge: "bg-violet-100 text-violet-700",
-  },
-  Folding: {
-    dot: "bg-teal-500",
-    bar: "bg-teal-500",
-    badge: "bg-teal-100 text-teal-700",
   },
   "Ready for Pickup": {
     dot: "bg-indigo-500",

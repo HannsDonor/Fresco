@@ -16,7 +16,7 @@ import {
   formatPrice,
   formatTime,
 } from "@/lib/format";
-import { LAUNDRY_STATUSES, LOAD_TYPE_LABELS, PAYMENT_METHODS, type LoadType } from "@/lib/constants";
+import { LOAD_TYPE_LABELS, PAYMENT_METHODS, type LoadType } from "@/lib/constants";
 import StatusBadge, { PaymentBadge } from "@/components/admin/StatusBadge";
 
 interface Feedback {
@@ -54,9 +54,39 @@ function loadTypeLabel(value: string): string {
 
 const DECISION_STATUSES = new Set(["Accepted", "Rejected"]);
 
-const POST_ACCEPT_STATUSES = LAUNDRY_STATUSES.filter(
-  (value) => value !== "Pending" && !DECISION_STATUSES.has(value)
-);
+const ACTIONABLE_STATUSES = new Set(["Accepted", "In Progress", "Ready for Pickup"]);
+
+function QuickAction({
+  label,
+  icon,
+  onClick,
+  disabled,
+  tone,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  tone: "primary" | "secondary" | "danger";
+}) {
+  const toneClasses =
+    tone === "primary"
+      ? "bg-brand-500 text-white shadow-lg shadow-brand-500/25 hover:bg-brand-600"
+      : tone === "danger"
+        ? "bg-rose-50 text-rose-600 ring-1 ring-rose-200 hover:bg-rose-100"
+        : "bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50";
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${toneClasses}`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
 
 export default function OrderDetailsModal({
   orderId,
@@ -73,7 +103,6 @@ export default function OrderDetailsModal({
   const [reloadTick, setReloadTick] = useState(0);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  const [newStatus, setNewStatus] = useState<string>("");
   const [note, setNote] = useState("");
   const [confirmCancelled, setConfirmCancelled] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null);
@@ -98,7 +127,6 @@ export default function OrderDetailsModal({
         }
         const fetched = json.order as AdminOrderDetail;
         setOrder(fetched);
-        setNewStatus(fetched.order_status);
         setPayMethod(fetched.payment_method ?? "Cash");
         setPayStatus(fetched.payment_status ?? "Pending");
         setPayAmount(String(fetched.total_amount ?? ""));
@@ -135,7 +163,7 @@ export default function OrderDetailsModal({
     };
   }, [onClose]);
 
-  async function handleStatusUpdate(targetStatus: string = newStatus) {
+  async function handleStatusUpdate(targetStatus: string) {
     if (!order) return;
     if (targetStatus === order.order_status) return;
 
@@ -465,54 +493,54 @@ export default function OrderDetailsModal({
                     ) : null}
                   </div>
                 </Section>
-              ) : (
+              ) : ACTIONABLE_STATUSES.has(order.order_status) ? (
                 <Section title="Update Status">
                   <div className="py-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label
-                          htmlFor={`status-${orderId}`}
-                          className="mb-2 block text-sm font-semibold text-slate-700"
-                        >
-                          New Status
-                        </label>
-                        <select
-                          id={`status-${orderId}`}
-                          value={newStatus}
-                          onChange={(event) => {
-                            setNewStatus(event.target.value);
-                            if (event.target.value !== "Cancelled") {
-                              setConfirmCancelled(false);
-                            }
-                          }}
-                          className={selectClasses}
-                        >
-                          {(order.order_status === "Accepted"
-                            ? ["Accepted", ...POST_ACCEPT_STATUSES]
-                            : POST_ACCEPT_STATUSES
-                          ).map((value) => (
-                            <option key={value} value={value}>
-                              {value}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label
-                          htmlFor={`note-${orderId}`}
-                          className="mb-2 block text-sm font-semibold text-slate-700"
-                        >
-                          Note <span className="font-normal text-slate-400">(optional)</span>
-                        </label>
-                        <input
-                          id={`note-${orderId}`}
-                          type="text"
-                          value={note}
-                          onChange={(event) => setNote(event.target.value)}
-                          placeholder="e.g. Picked up for cleaning"
-                          className={inputClasses}
+                    <div className="flex flex-wrap gap-3">
+                      {order.order_status === "Accepted" ? (
+                        <QuickAction
+                          tone="primary"
+                          disabled={updating}
+                          icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          label="Begin Processing"
+                          onClick={() => handleStatusUpdate("In Progress")}
                         />
-                      </div>
+                      ) : null}
+                      {order.order_status === "In Progress" ? (
+                        <QuickAction
+                          tone="primary"
+                          disabled={updating}
+                          icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          label="Ready for Pickup"
+                          onClick={() => handleStatusUpdate("Ready for Pickup")}
+                        />
+                      ) : null}
+                      {order.order_status !== "Ready for Pickup" ? (
+                        <QuickAction
+                          tone="secondary"
+                          disabled={updating}
+                          icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                          label="Mark Ready for Pickup"
+                          onClick={() => handleStatusUpdate("Ready for Pickup")}
+                        />
+                      ) : null}
+                      <QuickAction
+                        tone={order.order_status === "Ready for Pickup" ? "primary" : "secondary"}
+                        disabled={updating}
+                        icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                        label="Mark Completed"
+                        onClick={() => handleStatusUpdate("Completed")}
+                      />
+                    </div>
+
+                    <div className="mt-5 border-t border-slate-100 pt-4">
+                      <QuickAction
+                        tone="danger"
+                        disabled={updating}
+                        icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                        label="Cancel Order"
+                        onClick={() => handleStatusUpdate("Cancelled")}
+                      />
                     </div>
 
                     {confirmCancelled ? (
@@ -535,7 +563,7 @@ export default function OrderDetailsModal({
                           <button
                             type="button"
                             disabled={updating}
-                            onClick={() => handleStatusUpdate()}
+                            onClick={() => handleStatusUpdate("Cancelled")}
                             className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-70"
                           >
                             {updating ? "Cancelling..." : "Yes, Cancel Order"}
@@ -543,25 +571,9 @@ export default function OrderDetailsModal({
                         </div>
                       </div>
                     ) : null}
-
-                    <button
-                      type="button"
-                      disabled={updating || newStatus === order.order_status}
-                      onClick={() => handleStatusUpdate()}
-                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                    >
-                      {updating ? (
-                        <>
-                          <LoaderCircle className="h-4 w-4 animate-spin" />
-                          Updating...
-                        </>
-                      ) : (
-                        "Update Status"
-                      )}
-                    </button>
                   </div>
                 </Section>
-              )}
+              ) : null}
 
               <Section title="Record Payment">
                 <div className="py-4">

@@ -90,8 +90,12 @@ export default function AdminDashboard() {
     }
 
     fetchDashboard();
+    const interval = window.setInterval(() => {
+      fetchDashboard();
+    }, 60_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [reloadKey]);
 

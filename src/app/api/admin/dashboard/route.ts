@@ -6,7 +6,7 @@ import { getSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-const ACTIVE_STATUSES = ["Accepted", "Washing", "Drying", "Folding"];
+const ACTIVE_STATUSES = ["Accepted", "In Progress"];
 
 function todayString(): string {
   const now = new Date();

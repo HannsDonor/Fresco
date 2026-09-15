@@ -112,8 +112,12 @@ export default function PaymentsManager() {
     }
 
     fetchPayments();
+    const interval = window.setInterval(() => {
+      fetchPayments();
+    }, 60_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [q, status, date, reloadKey]);
 

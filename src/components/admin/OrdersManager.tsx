@@ -81,8 +81,12 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
     }
 
     fetchOrders();
+    const interval = window.setInterval(() => {
+      fetchOrders();
+    }, 60_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [q, status, date, reloadKey]);
 

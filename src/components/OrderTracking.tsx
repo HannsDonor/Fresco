@@ -16,9 +16,7 @@ const REFRESH_INTERVAL_MS = 30_000;
 const STATUS_SEQUENCE = [
   "Pending",
   "Accepted",
-  "Washing",
-  "Drying",
-  "Folding",
+  "In Progress",
   "Ready for Pickup",
   "Completed",
 ] as const;

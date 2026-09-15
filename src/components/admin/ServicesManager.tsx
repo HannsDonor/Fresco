@@ -68,8 +68,12 @@ export default function ServicesManager() {
     }
 
     fetchServices();
+    const interval = window.setInterval(() => {
+      fetchServices();
+    }, 60_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, [reloadKey]);
 

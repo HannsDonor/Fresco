@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -91,6 +91,22 @@ const inputClasses =
 const phoneInputClasses =
   "w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-[5.25rem] pr-4 text-[15px] text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10";
 
+const BOOKING_FORM_STORAGE_KEY = "frescoBookingForm";
+
+function loadSavedForm(initial: BookingForm): BookingForm {
+  if (typeof window === "undefined") return initial;
+  try {
+    const raw = window.localStorage.getItem(BOOKING_FORM_STORAGE_KEY);
+    if (!raw) return initial;
+    const saved = JSON.parse(raw) as Partial<BookingForm>;
+    const merged = { ...initial, ...saved };
+    if (initial.serviceId) merged.serviceId = initial.serviceId;
+    return merged;
+  } catch {
+    return initial;
+  }
+}
+
 const labelClasses = "mb-2 block text-sm font-semibold text-slate-700";
 
 function formatCurrency(value: string | number): string {
@@ -180,16 +196,18 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   const [step, setStep] = useState(1);
   const [services, setServices] = useState<Service[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
-  const [form, setForm] = useState<BookingForm>({
-    name: "",
-    phone: "",
-    address: "",
-    serviceId: initialServiceId ?? 0,
-    loadType: "",
-    instructions: "",
-    pickupDate: "",
-    pickupTime: "",
-  });
+  const [form, setForm] = useState<BookingForm>(() =>
+    loadSavedForm({
+      name: "",
+      phone: "",
+      address: "",
+      serviceId: initialServiceId ?? 0,
+      loadType: "",
+      instructions: "",
+      pickupDate: "",
+      pickupTime: "",
+    })
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -226,6 +244,14 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(BOOKING_FORM_STORAGE_KEY, JSON.stringify(form));
+    } catch {
+      // Storage unavailable — ignore.
+    }
+  }, [form]);
 
   const selectedService = useMemo(
     () => services.find((service) => service.service_id === form.serviceId) ?? null,
@@ -350,6 +376,11 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
         return;
       }
 
+      try {
+        window.localStorage.removeItem(BOOKING_FORM_STORAGE_KEY);
+      } catch {
+        // Storage unavailable — ignore.
+      }
       router.push(`/confirmation?token=${encodeURIComponent(data.tracking_token)}`);
     } catch {
       setSubmitError("Unable to reach the server. Please try again.");
@@ -393,14 +424,14 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
             </h1>
           </div>
 
-          <div className="mt-8 flex items-center gap-2 sm:gap-3">
+          <div className="mt-8 flex">
             {STEPS.map((item, index) => {
               const itemStep = index + 1;
               const active = itemStep === step;
               const complete = itemStep < step;
               return (
-                <div key={item.number} className="flex flex-1 items-center gap-2 sm:gap-3">
-                  <div className="flex flex-col items-center gap-1.5">
+                <Fragment key={item.number}>
+                  <div className="flex flex-1 flex-col items-center gap-1.5">
                     <span
                       className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-colors sm:h-10 sm:w-10 ${
                         active
@@ -413,7 +444,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       {complete ? <Check className="h-4 w-4" strokeWidth={3} /> : item.number}
                     </span>
                     <span
-                      className={`hidden text-xs font-semibold sm:block ${
+                      className={`hidden text-center text-xs font-semibold leading-none sm:block ${
                         active ? "text-brand-700" : complete ? "text-slate-700" : "text-slate-400"
                       }`}
                     >
@@ -422,12 +453,12 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   </div>
                   {itemStep < STEPS.length ? (
                     <div
-                      className={`h-0.5 flex-1 rounded-full ${
+                      className={`mt-[18px] h-0.5 flex-1 rounded-full sm:mt-5 ${
                         itemStep <= step ? "bg-brand-400" : "bg-slate-200"
                       }`}
                     />
                   ) : null}
-                </div>
+                </Fragment>
               );
             })}
           </div>

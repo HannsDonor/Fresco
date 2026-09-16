@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SESSION_COOKIE = "fresco_admin_session";
-export const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+export const SESSION_MAX_AGE = 60 * 60 * 24;
 
 export interface SessionPayload {
   admin_id: number;

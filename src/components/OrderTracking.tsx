@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  Bell,
+  BellOff,
   Check,
   Home,
   LoaderCircle,
@@ -13,6 +15,56 @@ import {
 import { TRACKING_TOKEN_STORAGE_KEY } from "@/lib/constants";
 
 const REFRESH_INTERVAL_MS = 30_000;
+
+const TRACK_SOUND_STORAGE_KEY = "frescoTrackSoundEnabled";
+
+function getAudioContextConstructor(): typeof AudioContext | null {
+  if (typeof window === "undefined") return null;
+  return (
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ??
+    null
+  );
+}
+
+function primeAudioContext(ref: React.RefObject<AudioContext | null>) {
+  try {
+    const AudioCtor = getAudioContextConstructor();
+    if (!AudioCtor) return;
+    if (!ref.current) ref.current = new AudioCtor();
+    void ref.current.resume();
+  } catch {
+    // Audio unavailable — ignore.
+  }
+}
+
+function playReadyChime(ref: React.RefObject<AudioContext | null>) {
+  try {
+    const AudioCtor = getAudioContextConstructor();
+    if (!AudioCtor) return;
+    if (!ref.current) ref.current = new AudioCtor();
+    const ctx = ref.current;
+    void ctx.resume();
+
+    const now = ctx.currentTime;
+    [659.25, 880].forEach((frequency, index) => {
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      const start = now + index * 0.16;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.25, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.4);
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.45);
+    });
+  } catch {
+    // Audio unavailable — ignore.
+  }
+}
 
 const STATUS_SEQUENCE = [
   "Pending",
@@ -79,6 +131,27 @@ export default function OrderTracking({ token }: { token: string }) {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return window.localStorage.getItem(TRACK_SOUND_STORAGE_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const previousStatusRef = useRef<string | null>(null);
+
+  function toggleSound() {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      window.localStorage.setItem(TRACK_SOUND_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      // Storage unavailable — ignore.
+    }
+    if (next) primeAudioContext(audioContextRef);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -126,6 +199,20 @@ export default function OrderTracking({ token }: { token: string }) {
     }, REFRESH_INTERVAL_MS);
     return () => window.clearInterval(interval);
   }, [token]);
+
+  useEffect(() => {
+    if (!order) return;
+    const previous = previousStatusRef.current;
+    previousStatusRef.current = order.order_status;
+    if (
+      soundEnabled &&
+      previous !== null &&
+      previous !== order.order_status &&
+      order.order_status === "Ready for Pickup"
+    ) {
+      playReadyChime(audioContextRef);
+    }
+  }, [order, soundEnabled]);
 
   const currentIndex = order
     ? STATUS_SEQUENCE.findIndex((status) => status === order.order_status)
@@ -222,6 +309,20 @@ export default function OrderTracking({ token }: { token: string }) {
                   />
                   <DetailRow label="Pickup Time" value={formatTime(order.pickup_time)} />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={toggleSound}
+                  aria-pressed={soundEnabled}
+                  className={`mt-5 inline-flex touch-manipulation items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors ${
+                    soundEnabled
+                      ? "bg-brand-50 text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100"
+                      : "bg-slate-50 text-slate-500 ring-1 ring-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  {soundEnabled ? <Bell className="h-4 w-4" /> : <BellOff className="h-4 w-4" />}
+                  {soundEnabled ? "Sound alert on" : "Sound alert off"}
+                </button>
               </div>
 
               <div className="rounded-[1.75rem] bg-white px-6 py-8 shadow-xl shadow-brand-950/5 ring-1 ring-brand-100 sm:px-10">

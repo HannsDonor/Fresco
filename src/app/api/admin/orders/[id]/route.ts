@@ -30,7 +30,7 @@ export async function GET(
               DATE_FORMAT(o.pickup_time, '%H:%i') AS pickup_time,
               o.order_status, o.total_amount, o.created_at, o.updated_at,
               c.customer_id, c.name AS customer_name, c.phone AS customer_phone,
-              c.email AS customer_email, c.address AS customer_address,
+              c.address AS customer_address,
               s.name AS service_name, s.description AS service_description,
               s.starting_price AS service_starting_price,
               (SELECT COALESCE(SUM(p.amount), 0) FROM payments p WHERE p.order_id = o.order_id) AS total_paid,

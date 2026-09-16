@@ -7,7 +7,6 @@ import { LOAD_TYPES } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 const TOKEN_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -24,7 +23,6 @@ export async function POST(request: Request) {
   let body: {
     name?: unknown;
     phone?: unknown;
-    email?: unknown;
     address?: unknown;
     service_id?: unknown;
     item_count?: unknown;
@@ -44,18 +42,24 @@ export async function POST(request: Request) {
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneIntl = /^63[0-9]{10}$/.test(phoneDigits) ? `+63${phoneDigits.slice(2)}` : "";
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const address = typeof body?.address === "string" ? body.address.trim() : "";
   const instructions =
     typeof body?.special_instructions === "string" ? body.special_instructions.trim() : "";
 
-  if (!name || !phoneIntl || !email || !address || !EMAIL_PATTERN.test(email)) {
+  if (!name || !phoneIntl || !address) {
     return NextResponse.json(
       {
         success: false,
         error:
-          "Please provide your full name, a valid Philippine mobile number (+63 9XX XXX XXXX), a valid email address, and your pickup address.",
+          "Please provide your full name, a valid Philippine mobile number (+63 9XX XXX XXXX), and your pickup address.",
       },
+      { status: 400 }
+    );
+  }
+
+  if (name.length > 50) {
+    return NextResponse.json(
+      { success: false, error: "Full name must be 50 characters or fewer." },
       { status: 400 }
     );
   }
@@ -147,8 +151,8 @@ export async function POST(request: Request) {
     if (customerRows[0]) {
       customerId = customerRows[0].customer_id;
       await connection.execute(
-        "UPDATE customers SET name = ?, email = ? WHERE customer_id = ?",
-        [name, email, customerId]
+        "UPDATE customers SET name = ? WHERE customer_id = ?",
+        [name, customerId]
       );
       if (address) {
         await connection.execute(
@@ -158,8 +162,8 @@ export async function POST(request: Request) {
       }
     } else {
       const [customerResult] = await connection.execute<ResultSetHeader>(
-        "INSERT INTO customers (name, phone, email, address) VALUES (?, ?, ?, ?)",
-        [name, phoneIntl, email, address]
+        "INSERT INTO customers (name, phone, address) VALUES (?, ?, ?)",
+        [name, phoneIntl, address]
       );
       customerId = customerResult.insertId;
     }

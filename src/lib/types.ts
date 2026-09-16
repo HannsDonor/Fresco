@@ -46,7 +46,6 @@ export interface TimelineEntry {
 }
 
 export interface AdminOrderDetail extends AdminOrderRow {
-  customer_email: string | null;
   customer_address: string | null;
   service_description: string | null;
   service_starting_price: string;

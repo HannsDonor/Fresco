@@ -326,7 +326,6 @@ export default function OrderDetailsModal({
               <Section title="Customer Information">
                 <Row label="Name">{order.customer_name}</Row>
                 <Row label="Phone">{order.customer_phone || "—"}</Row>
-                <Row label="Email">{order.customer_email || "—"}</Row>
                 <Row label="Address">{order.customer_address || "—"}</Row>
               </Section>
 

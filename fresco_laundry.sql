@@ -52,7 +52,6 @@ CREATE TABLE `customers` (
   `customer_id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   `phone` varchar(20) NOT NULL,
-  `email` varchar(150) NOT NULL,
   `address` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
@@ -62,8 +61,8 @@ CREATE TABLE `customers` (
 -- Dumping data for table `customers`
 --
 
-INSERT INTO `customers` (`customer_id`, `name`, `phone`, `email`, `address`, `created_at`, `updated_at`) VALUES
-(1, 'Maria Santos', '09123456789', 'maria@gmail.com', 'aaa', '2026-09-14 06:35:58', '2026-09-15 04:43:01');
+INSERT INTO `customers` (`customer_id`, `name`, `phone`, `address`, `created_at`, `updated_at`) VALUES
+(1, 'Maria Santos', '09123456789', 'aaa', '2026-09-14 06:35:58', '2026-09-15 04:43:01');
 
 -- --------------------------------------------------------
 

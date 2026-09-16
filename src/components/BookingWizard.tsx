@@ -14,7 +14,6 @@ import {
   Clock,
   Home,
   LoaderCircle,
-  Mail,
   MapPin,
   Package,
   Phone,
@@ -53,7 +52,6 @@ interface ShopInfo {
 interface BookingForm {
   name: string;
   phone: string;
-  email: string;
   address: string;
   serviceId: number;
   itemCount: string;
@@ -189,7 +187,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   const [form, setForm] = useState<BookingForm>({
     name: "",
     phone: "",
-    email: "",
     address: "",
     serviceId: initialServiceId ?? 0,
     itemCount: "",
@@ -292,12 +289,11 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
 
     if (current === 1) {
       if (!form.name.trim()) next.name = "Please enter your full name.";
+      else if (form.name.trim().length > 50)
+        next.name = "Full name must be 50 characters or fewer.";
       if (!form.phone.trim()) next.phone = "Please enter your contact number.";
       else if (!/^9[0-9]{9}$/.test(form.phone.trim()))
         next.phone = "Enter a valid Philippine mobile number (+63 9XX XXX XXXX).";
-      if (!form.email.trim()) next.email = "Please enter your email address.";
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
-        next.email = "Please enter a valid email address.";
       if (!form.address.trim()) next.address = "Please enter your address.";
     }
 
@@ -351,7 +347,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
         body: JSON.stringify({
           name: form.name.trim(),
           phone: form.phone.trim() ? `+63${form.phone.trim()}` : "",
-          email: form.email.trim(),
           address: form.address.trim(),
           service_id: form.serviceId,
           item_count: Number(form.itemCount),
@@ -465,6 +460,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       id="name"
                       type="text"
                       autoComplete="name"
+                      maxLength={50}
                       placeholder="e.g. Maria Santos"
                       value={form.name}
                       onChange={(event) => setField("name", event.target.value)}
@@ -497,27 +493,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   </div>
                   {errors.phone ? (
                     <p className="mt-1.5 text-sm font-medium text-red-600">{errors.phone}</p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <label htmlFor="email" className={labelClasses}>
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                    <input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="e.g. maria@email.com"
-                      value={form.email}
-                      onChange={(event) => setField("email", event.target.value)}
-                      className={inputClasses}
-                    />
-                  </div>
-                  {errors.email ? (
-                    <p className="mt-1.5 text-sm font-medium text-red-600">{errors.email}</p>
                   ) : null}
                 </div>
 
@@ -768,11 +743,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   </h2>
                   <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                     <ReviewRow label="Name" value={form.name.trim()} />
-                    <ReviewRow
-                      label="Phone"
-                      value={form.phone.trim() ? `+63 ${formatPhoneCore(form.phone.trim())}` : "—"}
-                    />
-                    <ReviewRow label="Email" value={form.email.trim()} />
+                    <ReviewRow label="Phone" value={form.phone.trim() ? `+63 ${formatPhoneCore(form.phone.trim())}` : "—"} />
                     <ReviewRow label="Address" value={form.address.trim() || "—"} />
                   </div>
                 </section>

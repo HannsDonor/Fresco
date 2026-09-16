@@ -12,8 +12,8 @@ export async function GET(
 
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT o.order_id, o.order_reference, o.tracking_token, o.item_count,
-              o.estimated_weight, o.load_type, o.special_instructions,
+      `SELECT o.order_id, o.order_reference, o.tracking_token,
+              o.load_type, o.special_instructions,
               o.pickup_date, o.pickup_time, o.order_status, o.total_amount,
               o.created_at,
               c.name AS customer_name,
@@ -51,8 +51,6 @@ export async function GET(
           name: order.service_name,
           starting_price: order.starting_price,
         },
-        item_count: order.item_count,
-        estimated_weight: order.estimated_weight,
         load_type: order.load_type,
         special_instructions: order.special_instructions,
         pickup_date: order.pickup_date,

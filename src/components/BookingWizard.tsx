@@ -15,9 +15,7 @@ import {
   Home,
   LoaderCircle,
   MapPin,
-  Package,
   Phone,
-  Scale,
   Shirt,
   Sparkles,
   User,
@@ -54,8 +52,6 @@ interface BookingForm {
   phone: string;
   address: string;
   serviceId: number;
-  itemCount: string;
-  weight: string;
   loadType: string;
   instructions: string;
   pickupDate: string;
@@ -189,8 +185,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     phone: "",
     address: "",
     serviceId: initialServiceId ?? 0,
-    itemCount: "",
-    weight: "",
     loadType: "",
     instructions: "",
     pickupDate: "",
@@ -299,13 +293,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
 
     if (current === 2) {
       if (!form.serviceId) next.serviceId = "Please select a service.";
-      if (!form.itemCount.trim()) next.itemCount = "Please enter the number of items.";
-      else if (!Number.isInteger(Number(form.itemCount)) || Number(form.itemCount) <= 0)
-        next.itemCount = "Must be a whole number greater than 0.";
-      if (form.weight.trim()) {
-        const weight = Number(form.weight);
-        if (Number.isNaN(weight) || weight < 0) next.weight = "Enter a valid weight.";
-      }
       if (!form.loadType) next.loadType = "Please select a load type.";
     }
 
@@ -349,8 +336,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
           phone: form.phone.trim() ? `+63${form.phone.trim()}` : "",
           address: form.address.trim(),
           service_id: form.serviceId,
-          item_count: Number(form.itemCount),
-          estimated_weight: form.weight.trim() === "" ? null : Number(form.weight),
           load_type: form.loadType,
           special_instructions: form.instructions.trim() || null,
           pickup_date: form.pickupDate,
@@ -567,53 +552,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   ) : null}
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="itemCount" className={labelClasses}>
-                      Number of Items <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Package className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <input
-                        id="itemCount"
-                        type="number"
-                        min={1}
-                        inputMode="numeric"
-                        placeholder="e.g. 12"
-                        value={form.itemCount}
-                        onChange={(event) => setField("itemCount", event.target.value)}
-                        className={inputClasses}
-                      />
-                    </div>
-                    {errors.itemCount ? (
-                      <p className="mt-1.5 text-sm font-medium text-red-600">{errors.itemCount}</p>
-                    ) : null}
-                  </div>
-
-                  <div>
-                    <label htmlFor="weight" className={labelClasses}>
-                      Estimated Weight (kg)
-                    </label>
-                    <div className="relative">
-                      <Scale className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <input
-                        id="weight"
-                        type="number"
-                        min={0}
-                        step="0.1"
-                        inputMode="decimal"
-                        placeholder="e.g. 5.5"
-                        value={form.weight}
-                        onChange={(event) => setField("weight", event.target.value)}
-                        className={inputClasses}
-                      />
-                    </div>
-                    {errors.weight ? (
-                      <p className="mt-1.5 text-sm font-medium text-red-600">{errors.weight}</p>
-                    ) : null}
-                  </div>
-                </div>
-
                 <div>
                   <span className={labelClasses}>
                     Load Type <span className="text-red-500">*</span>
@@ -754,14 +692,6 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   </h2>
                   <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                     <ReviewRow label="Service" value={selectedService?.name ?? "—"} />
-                    <ReviewRow
-                      label="Items"
-                      value={form.itemCount ? String(Number(form.itemCount)) : "—"}
-                    />
-                    <ReviewRow
-                      label="Estimated Weight"
-                      value={form.weight.trim() ? `${form.weight.trim()} kg` : "—"}
-                    />
                     <ReviewRow
                       label="Load Type"
                       value={form.loadType ? LOAD_TYPE_LABELS[form.loadType as (typeof LOAD_TYPES)[number]] : "—"}

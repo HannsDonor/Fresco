@@ -18,7 +18,7 @@ function todayString(): string {
 
 const ORDER_SELECT = `
 SELECT o.order_id, o.order_reference, o.tracking_token, o.service_id,
-       o.item_count, o.estimated_weight, o.load_type, o.special_instructions,
+       o.load_type, o.special_instructions,
        DATE_FORMAT(o.pickup_date, '%Y-%m-%d') AS pickup_date,
        DATE_FORMAT(o.pickup_time, '%H:%i') AS pickup_time,
        o.order_status, o.total_amount, o.created_at, o.updated_at,

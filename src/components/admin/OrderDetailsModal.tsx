@@ -331,12 +331,6 @@ export default function OrderDetailsModal({
 
               <Section title="Laundry Information">
                 <Row label="Service">{order.service_name}</Row>
-                <Row label="Item Count">
-                  {order.item_count} {order.item_count === 1 ? "item" : "items"}
-                </Row>
-                <Row label="Estimated Weight">
-                  {order.estimated_weight ? `${order.estimated_weight} kg` : "—"}
-                </Row>
                 <Row label="Load Type">{loadTypeLabel(order.load_type)}</Row>
                 <Row label="Special Instructions">{order.special_instructions || "—"}</Row>
                 <Row label="Total Amount">{formatPrice(order.total_amount)}</Row>

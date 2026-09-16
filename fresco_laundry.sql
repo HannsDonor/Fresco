@@ -76,8 +76,6 @@ CREATE TABLE `laundry_orders` (
   `order_reference` varchar(30) NOT NULL,
   `tracking_token` varchar(100) NOT NULL,
   `service_id` int(11) NOT NULL,
-  `item_count` int(11) NOT NULL,
-  `estimated_weight` decimal(8,2) DEFAULT NULL,
   `load_type` enum('Small','Medium','Large') NOT NULL,
   `special_instructions` text DEFAULT NULL,
   `pickup_date` date NOT NULL,
@@ -92,9 +90,9 @@ CREATE TABLE `laundry_orders` (
 -- Dumping data for table `laundry_orders`
 --
 
-INSERT INTO `laundry_orders` (`order_id`, `customer_id`, `order_reference`, `tracking_token`, `service_id`, `item_count`, `estimated_weight`, `load_type`, `special_instructions`, `pickup_date`, `pickup_time`, `order_status`, `total_amount`, `created_at`, `updated_at`) VALUES
-(1, 1, 'FRC-0001', 'TRK-K5NUKV', 1, 20, 5.00, 'Medium', NULL, '2026-09-14', '14:30:00', 'Accepted', 80.00, '2026-09-14 06:35:58', '2026-09-15 04:43:44'),
-(2, 1, 'FRC-0002', 'TRK-BU6FDY', 1, 12, 4.80, 'Medium', NULL, '2026-09-15', '10:00:00', 'Completed', 80.00, '2026-09-15 04:43:01', '2026-09-15 04:48:32');
+INSERT INTO `laundry_orders` (`order_id`, `customer_id`, `order_reference`, `tracking_token`, `service_id`, `load_type`, `special_instructions`, `pickup_date`, `pickup_time`, `order_status`, `total_amount`, `created_at`, `updated_at`) VALUES
+(1, 1, 'FRC-0001', 'TRK-K5NUKV', 1, 'Medium', NULL, '2026-09-14', '14:30:00', 'Accepted', 80.00, '2026-09-14 06:35:58', '2026-09-15 04:43:44'),
+(2, 1, 'FRC-0002', 'TRK-BU6FDY', 1, 'Medium', NULL, '2026-09-15', '10:00:00', 'Completed', 80.00, '2026-09-15 04:43:01', '2026-09-15 04:48:32');
 
 -- --------------------------------------------------------
 

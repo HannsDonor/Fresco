@@ -236,7 +236,6 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
                   <th className="px-5 py-3">Customer</th>
                   <th className="px-5 py-3">Contact</th>
                   <th className="px-5 py-3">Service</th>
-                  <th className="px-5 py-3 text-center">Items</th>
                   <th className="px-5 py-3">Pickup Date</th>
                   <th className="px-5 py-3">Pickup Time</th>
                   <th className="px-5 py-3">Status</th>
@@ -260,9 +259,6 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
                     </td>
                     <td className="px-5 py-3.5 text-slate-500">{order.customer_phone}</td>
                     <td className="px-5 py-3.5 text-slate-500">{order.service_name}</td>
-                    <td className="px-5 py-3.5 text-center font-semibold text-slate-700">
-                      {order.item_count}
-                    </td>
                     <td className="px-5 py-3.5 text-slate-500">
                       {formatDateShort(order.pickup_date)}
                     </td>

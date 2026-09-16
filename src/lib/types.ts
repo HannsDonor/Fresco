@@ -3,8 +3,6 @@ export interface AdminOrderRow {
   order_reference: string;
   tracking_token: string;
   service_id: number;
-  item_count: number;
-  estimated_weight: string | null;
   load_type: string;
   special_instructions: string | null;
   pickup_date: string;

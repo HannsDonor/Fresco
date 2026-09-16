@@ -25,8 +25,6 @@ export async function POST(request: Request) {
     phone?: unknown;
     address?: unknown;
     service_id?: unknown;
-    item_count?: unknown;
-    estimated_weight?: unknown;
     load_type?: unknown;
     special_instructions?: unknown;
     pickup_date?: unknown;
@@ -69,14 +67,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "Please select a valid service." }, { status: 400 });
   }
 
-  const itemCount = Number(body?.item_count);
-  if (!Number.isInteger(itemCount) || itemCount <= 0) {
-    return NextResponse.json(
-      { success: false, error: "Number of items must be a whole number greater than 0." },
-      { status: 400 }
-    );
-  }
-
   const loadType = typeof body?.load_type === "string" ? body.load_type : "";
   if (!(LOAD_TYPES as readonly string[]).includes(loadType)) {
     return NextResponse.json(
@@ -102,21 +92,6 @@ export async function POST(request: Request) {
       { success: false, error: "Pickup date cannot be in the past." },
       { status: 400 }
     );
-  }
-
-  let estimatedWeight: number | null = null;
-  if (
-    body?.estimated_weight !== undefined &&
-    body?.estimated_weight !== null &&
-    body?.estimated_weight !== ""
-  ) {
-    estimatedWeight = Number(body.estimated_weight);
-    if (Number.isNaN(estimatedWeight) || estimatedWeight < 0) {
-      return NextResponse.json(
-        { success: false, error: "Estimated weight must be a valid number." },
-        { status: 400 }
-      );
-    }
   }
 
   const connection = await pool.getConnection();
@@ -197,17 +172,15 @@ export async function POST(request: Request) {
 
     const [orderResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO laundry_orders
-        (customer_id, order_reference, tracking_token, service_id, item_count,
-         estimated_weight, load_type, special_instructions, pickup_date,
+        (customer_id, order_reference, tracking_token, service_id,
+         load_type, special_instructions, pickup_date,
          pickup_time, order_status, total_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)`,
       [
         customerId,
         orderReference,
         trackingToken,
         serviceId,
-        itemCount,
-        estimatedWeight,
         loadType,
         instructions || null,
         pickupDate,

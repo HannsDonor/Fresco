@@ -35,8 +35,6 @@ interface OrderData {
   total_amount: string | number;
   created_at: string;
   service: { name: string; starting_price: string | number };
-  item_count: number;
-  estimated_weight: string | number | null;
   load_type: string;
   special_instructions: string | null;
   pickup_date: string;

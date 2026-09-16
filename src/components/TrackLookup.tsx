@@ -4,10 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home, Radar, WashingMachine, LoaderCircle } from "lucide-react";
+import { TRACKING_TOKEN_STORAGE_KEY } from "@/lib/constants";
+
+function readSavedToken(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(TRACKING_TOKEN_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
 
 export default function TrackLookup() {
   const router = useRouter();
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(readSavedToken);
+  const [savedToken, setSavedToken] = useState(readSavedToken);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,6 +37,13 @@ export default function TrackLookup() {
       : token.startsWith("TRK")
         ? token
         : `TRK-${token}`;
+
+    try {
+      window.localStorage.setItem(TRACKING_TOKEN_STORAGE_KEY, normalized);
+    } catch {
+      // Storage unavailable — ignore.
+    }
+    setSavedToken(normalized);
 
     setSubmitting(true);
     router.push(`/track/${encodeURIComponent(normalized)}`);
@@ -94,6 +112,16 @@ export default function TrackLookup() {
                 Track My Laundry
               </button>
             </form>
+
+            {savedToken ? (
+              <Link
+                href={`/track/${encodeURIComponent(savedToken)}`}
+                className="mt-4 inline-flex items-center justify-center gap-2 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
+              >
+                <Radar className="h-4 w-4" />
+                View your last tracked order ({savedToken})
+              </Link>
+            ) : null}
           </div>
         </div>
       </main>

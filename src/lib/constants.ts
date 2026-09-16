@@ -51,3 +51,5 @@ export const SHOP_DAYS = [
 export type ShopDay = (typeof SHOP_DAYS)[number];
 
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export const TRACKING_TOKEN_STORAGE_KEY = "frescoTrackingToken";

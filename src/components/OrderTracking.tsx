@@ -10,6 +10,7 @@ import {
   WashingMachine,
   AlertTriangle,
 } from "lucide-react";
+import { TRACKING_TOKEN_STORAGE_KEY } from "@/lib/constants";
 
 const REFRESH_INTERVAL_MS = 30_000;
 
@@ -55,21 +56,14 @@ function formatDate(value: string | null): string {
   });
 }
 
-function formatPickup(date: string, time: string): string {
-  if (!date) return "—";
-  const parsed = new Date(`${date}T00:00:00`);
-  const dateLabel = parsed.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-  const [h, m] = (time ?? "00:00").split(":");
-  let hour = Number(h);
+function formatTime(time: string): string {
+  if (!time) return "—";
+  const [h, m] = time.split(":");
+  const hour = Number(h);
+  if (Number.isNaN(hour)) return "—";
   const period = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12 || 12;
-  const timeLabel = m === "00" ? `${hour} ${period}` : `${hour}:${m} ${period}`;
-  return `${dateLabel} at ${timeLabel}`;
+  const displayHour = hour % 12 || 12;
+  return m === "00" ? `${displayHour} ${period}` : `${displayHour}:${m} ${period}`;
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -100,6 +94,11 @@ export default function OrderTracking({ token }: { token: string }) {
           return;
         }
         setOrder(data.order);
+        try {
+          window.localStorage.setItem(TRACKING_TOKEN_STORAGE_KEY, data.order.tracking_token);
+        } catch {
+          // Storage unavailable — ignore.
+        }
       } catch {
         if (!cancelled) setError(true);
       } finally {
@@ -221,7 +220,7 @@ export default function OrderTracking({ token }: { token: string }) {
                     label="Pickup Date"
                     value={formatDate(order.pickup_date)}
                   />
-                  <DetailRow label="Pickup Time" value={formatPickup(order.pickup_date, order.pickup_time)} />
+                  <DetailRow label="Pickup Time" value={formatTime(order.pickup_time)} />
                 </div>
               </div>
 

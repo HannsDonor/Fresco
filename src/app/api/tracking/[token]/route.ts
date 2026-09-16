@@ -14,7 +14,9 @@ export async function GET(
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT o.order_id, o.order_reference, o.tracking_token,
               o.load_type, o.special_instructions,
-              o.pickup_date, o.pickup_time, o.order_status, o.total_amount,
+              DATE_FORMAT(o.pickup_date, '%Y-%m-%d') AS pickup_date,
+              DATE_FORMAT(o.pickup_time, '%H:%i') AS pickup_time,
+              o.order_status, o.total_amount,
               o.created_at,
               c.name AS customer_name,
               s.name AS service_name, s.starting_price

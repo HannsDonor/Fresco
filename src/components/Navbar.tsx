@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { WashingMachine, Radar, Menu, X } from "lucide-react";
+import { WashingMachine, Menu, X } from "lucide-react";
 
 const navLinks = [
   { label: "Services", href: "#services" },
@@ -38,13 +38,6 @@ export default function Navbar() {
         </div>
 
         <div className="hidden items-center gap-7 lg:flex">
-          <Link
-            href="/tracking"
-            className="inline-flex items-center gap-2 text-[15px] font-semibold text-slate-800 transition-colors hover:text-brand-600"
-          >
-            <Radar className="h-[18px] w-[18px]" />
-            Track My Laundry
-          </Link>
           <Link
             href="/admin/login"
             className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700"
@@ -85,14 +78,6 @@ export default function Navbar() {
             ))}
           </div>
           <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4">
-            <Link
-              href="/tracking"
-              onClick={() => setOpen(false)}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700"
-            >
-              <Radar className="h-[18px] w-[18px]" />
-              Track My Laundry
-            </Link>
             <Link
               href="/admin/login"
               onClick={() => setOpen(false)}

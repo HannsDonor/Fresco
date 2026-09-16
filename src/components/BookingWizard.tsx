@@ -94,6 +94,9 @@ const ICONS: Record<string, LucideIcon> = {
 const inputClasses =
   "w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-[15px] text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10";
 
+const phoneInputClasses =
+  "w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-[5.25rem] pr-4 text-[15px] text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10";
+
 const labelClasses = "mb-2 block text-sm font-semibold text-slate-700";
 
 function formatCurrency(value: string | number): string {
@@ -163,6 +166,18 @@ function blurActiveElement() {
   if (active && active instanceof HTMLElement && active !== document.body) {
     active.blur();
   }
+}
+
+function phoneCore(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  if (digits.startsWith("63")) digits = digits.slice(2);
+  return digits.slice(0, 10);
+}
+
+function formatPhoneCore(core: string): string {
+  if (!core) return "";
+  return [core.slice(0, 3), core.slice(3, 6), core.slice(6)].filter(Boolean).join(" ");
 }
 
 export default function BookingWizard({ initialServiceId }: { initialServiceId?: number }) {
@@ -278,11 +293,12 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     if (current === 1) {
       if (!form.name.trim()) next.name = "Please enter your full name.";
       if (!form.phone.trim()) next.phone = "Please enter your contact number.";
-      else if (form.phone.replace(/\D/g, "").length < 7)
-        next.phone = "Please enter a valid contact number.";
+      else if (!/^9[0-9]{9}$/.test(form.phone.trim()))
+        next.phone = "Enter a valid Philippine mobile number (+63 9XX XXX XXXX).";
       if (!form.email.trim()) next.email = "Please enter your email address.";
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
         next.email = "Please enter a valid email address.";
+      if (!form.address.trim()) next.address = "Please enter your address.";
     }
 
     if (current === 2) {
@@ -334,9 +350,9 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim(),
-          phone: form.phone.trim(),
+          phone: form.phone.trim() ? `+63${form.phone.trim()}` : "",
           email: form.email.trim(),
-          address: form.address.trim() || null,
+          address: form.address.trim(),
           service_id: form.serviceId,
           item_count: Number(form.itemCount),
           estimated_weight: form.weight.trim() === "" ? null : Number(form.weight),
@@ -466,14 +482,17 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   </label>
                   <div className="relative">
                     <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    <span className="pointer-events-none absolute left-[2.7rem] top-1/2 -translate-y-1/2 text-[15px] font-semibold text-slate-600">
+                      +63
+                    </span>
                     <input
                       id="phone"
                       type="tel"
                       autoComplete="tel"
-                      placeholder="e.g. 0917 123 4567"
-                      value={form.phone}
-                      onChange={(event) => setField("phone", event.target.value)}
-                      className={inputClasses}
+                      placeholder="917 123 4567"
+                      value={formatPhoneCore(form.phone)}
+                      onChange={(event) => setField("phone", phoneCore(event.target.value))}
+                      className={phoneInputClasses}
                     />
                   </div>
                   {errors.phone ? (
@@ -504,19 +523,22 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
 
                 <div>
                   <label htmlFor="address" className={labelClasses}>
-                    Address
+                    Address <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <MapPin className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-slate-400" />
                     <textarea
                       id="address"
                       rows={3}
-                      placeholder="Drop-off / pickup address (optional)"
+                      placeholder="e.g. 123 Rizal Street, Brgy. San Isidro"
                       value={form.address}
                       onChange={(event) => setField("address", event.target.value)}
                       className={`${inputClasses} resize-none py-3.5`}
                     />
                   </div>
+                  {errors.address ? (
+                    <p className="mt-1.5 text-sm font-medium text-red-600">{errors.address}</p>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -746,7 +768,10 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   </h2>
                   <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                     <ReviewRow label="Name" value={form.name.trim()} />
-                    <ReviewRow label="Phone" value={form.phone.trim()} />
+                    <ReviewRow
+                      label="Phone"
+                      value={form.phone.trim() ? `+63 ${formatPhoneCore(form.phone.trim())}` : "—"}
+                    />
                     <ReviewRow label="Email" value={form.email.trim()} />
                     <ReviewRow label="Address" value={form.address.trim() || "—"} />
                   </div>

@@ -42,14 +42,20 @@ export async function POST(request: Request) {
 
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
+  const phoneDigits = phone.replace(/\D/g, "");
+  const phoneIntl = /^63[0-9]{10}$/.test(phoneDigits) ? `+63${phoneDigits.slice(2)}` : "";
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const address = typeof body?.address === "string" ? body.address.trim() : "";
   const instructions =
     typeof body?.special_instructions === "string" ? body.special_instructions.trim() : "";
 
-  if (!name || !phone || !email || !EMAIL_PATTERN.test(email)) {
+  if (!name || !phoneIntl || !email || !address || !EMAIL_PATTERN.test(email)) {
     return NextResponse.json(
-      { success: false, error: "Please provide your full name, contact number, and a valid email address." },
+      {
+        success: false,
+        error:
+          "Please provide your full name, a valid Philippine mobile number (+63 9XX XXX XXXX), a valid email address, and your pickup address.",
+      },
       { status: 400 }
     );
   }
@@ -134,7 +140,7 @@ export async function POST(request: Request) {
 
     const [customerRows] = await connection.execute<RowDataPacket[]>(
       "SELECT customer_id FROM customers WHERE phone = ? LIMIT 1",
-      [phone]
+      [phoneIntl]
     );
 
     let customerId: number;
@@ -153,7 +159,7 @@ export async function POST(request: Request) {
     } else {
       const [customerResult] = await connection.execute<ResultSetHeader>(
         "INSERT INTO customers (name, phone, email, address) VALUES (?, ?, ?, ?)",
-        [name, phone, email, address || null]
+        [name, phoneIntl, email, address]
       );
       customerId = customerResult.insertId;
     }

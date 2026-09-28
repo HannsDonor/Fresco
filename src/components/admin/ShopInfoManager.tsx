@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
+import Image from "next/image";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -9,9 +10,11 @@ import {
   Mail,
   MapPin,
   Phone,
+  QrCode,
   RefreshCw,
   Save,
   Store,
+  Trash2,
 } from "lucide-react";
 import type { AdminShopInfo, ShopHoursDay } from "@/lib/types";
 import { SHOP_DAYS, type ShopDay } from "@/lib/constants";
@@ -79,6 +82,10 @@ export default function ShopInfoManager() {
   const [address, setAddress] = useState("");
   const [hours, setHours] = useState<Record<ShopDay, ShopHoursDay>>(EMPTY_HOURS);
   const [closedDays, setClosedDays] = useState<Record<ShopDay, boolean>>(EMPTY_CLOSED);
+  const [gcashNumber, setGcashNumber] = useState("");
+  const [gcashQrPath, setGcashQrPath] = useState<string | null>(null);
+  const [uploadingQr, setUploadingQr] = useState(false);
+  const [qrInputKey, setQrInputKey] = useState(0);
 
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -101,6 +108,8 @@ export default function ShopInfoManager() {
         setPhone(data.phone ?? "");
         setEmail(data.email ?? "");
         setAddress(data.address ?? "");
+        setGcashNumber(data.gcash_number ?? "");
+        setGcashQrPath(data.gcash_qr_path ?? null);
         const nextClosed = { ...EMPTY_CLOSED };
         for (const day of SHOP_DAYS) {
           const { open, close } = data.hours[day];
@@ -142,6 +151,62 @@ export default function ShopInfoManager() {
     setBanner(null);
   }
 
+  async function handleQrUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingQr(true);
+    setBanner(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const response = await fetch("/api/admin/shop-information/gcash-qr", {
+        method: "POST",
+        body: form,
+      });
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        setBanner({
+          type: "error",
+          text: json?.error ?? "Failed to upload the GCash QR code.",
+        });
+        return;
+      }
+      setGcashQrPath(json.gcash_qr_path ?? null);
+      setQrInputKey((key) => key + 1);
+      setBanner({ type: "success", text: "GCash QR code uploaded." });
+    } catch {
+      setBanner({ type: "error", text: "Unable to reach the server. Please try again." });
+    } finally {
+      setUploadingQr(false);
+    }
+  }
+
+  async function handleQrRemove() {
+    setUploadingQr(true);
+    setBanner(null);
+    try {
+      const response = await fetch("/api/admin/shop-information/gcash-qr", {
+        method: "DELETE",
+      });
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        setBanner({
+          type: "error",
+          text: json?.error ?? "Failed to remove the GCash QR code.",
+        });
+        return;
+      }
+      setGcashQrPath(null);
+      setQrInputKey((key) => key + 1);
+      setBanner({ type: "success", text: "GCash QR code removed." });
+    } catch {
+      setBanner({ type: "error", text: "Unable to reach the server. Please try again." });
+    } finally {
+      setUploadingQr(false);
+    }
+  }
+
   async function handleSave() {
     if (!shopName.trim()) {
       setBanner({ type: "error", text: "Shop name is required." });
@@ -156,6 +221,7 @@ export default function ShopInfoManager() {
         phone: phone.trim() || null,
         email: email.trim() || null,
         address: address.trim() || null,
+        gcash_number: gcashNumber.trim() || null,
         hours: SHOP_DAYS.reduce((acc, day) => {
           const isClosed = closedDays[day];
           acc[day] = {
@@ -433,6 +499,104 @@ export default function ShopInfoManager() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white shadow-sm ring-1 ring-brand-100 lg:col-span-2">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 px-6 py-4">
+              <QrCode className="h-5 w-5 text-brand-500" />
+              <h2 className="text-base font-bold text-slate-900">GCash Payments</h2>
+            </div>
+            <div className="grid gap-6 px-6 py-5 lg:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="gcash-number"
+                  className="mb-2 block text-sm font-semibold text-slate-700"
+                >
+                  GCash Number
+                </label>
+                <input
+                  id="gcash-number"
+                  type="text"
+                  value={gcashNumber}
+                  maxLength={50}
+                  onChange={(event) => {
+                    setGcashNumber(event.target.value);
+                    markDirty();
+                  }}
+                  placeholder="e.g. 0917 123 4567"
+                  className={inputClasses}
+                />
+                <p className="mt-2 text-xs font-medium text-slate-500">
+                  Shown to customers who choose GCash while booking. Click Save Changes to apply.
+                </p>
+
+                <div className="mt-6">
+                  <span className="mb-2 block text-sm font-semibold text-slate-700">
+                    QR Code Image
+                  </span>
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-200">
+                      {gcashQrPath ? (
+                        <Image
+                          src={gcashQrPath}
+                          alt="Current GCash QR code"
+                          width={256}
+                          height={256}
+                          className="h-full w-full object-contain"
+                        />
+                      ) : (
+                        <span className="px-2 text-center text-xs font-medium text-slate-400">
+                          No image set
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      <input
+                        key={qrInputKey}
+                        id="gcash-qr"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleQrUpload}
+                        className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-brand-500 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-600"
+                      />
+                      {gcashQrPath ? (
+                        <button
+                          type="button"
+                          onClick={handleQrRemove}
+                          disabled={uploadingQr}
+                          className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove image
+                        </button>
+                      ) : null}
+                      {uploadingQr ? (
+                        <p className="flex items-center gap-2 text-xs font-semibold text-brand-600">
+                          <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                          Uploading...
+                        </p>
+                      ) : null}
+                      <p className="text-xs font-medium text-slate-500">
+                        PNG, JPG, or WEBP up to 2 MB. Uploaded files are stored in{" "}
+                        <code className="rounded bg-slate-100 px-1 py-0.5 text-[11px]">
+                          public/images/gcash/
+                        </code>
+                        .
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-fit rounded-2xl bg-brand-50/70 p-4 text-sm leading-relaxed text-brand-800 ring-1 ring-brand-100">
+                <p className="font-bold">How this appears to customers</p>
+                <p className="mt-1.5">
+                  When a customer picks <span className="font-semibold">GCash</span> in the booking
+                  flow, step 3 shows this QR code with the number and a copy button. If no image is
+                  set, the bundled placeholder is shown instead.
+                </p>
               </div>
             </div>
           </div>

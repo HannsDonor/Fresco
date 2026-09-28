@@ -28,7 +28,7 @@ function formatTime(value: string | null | undefined): string {
 export async function GET() {
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT shop_id, shop_name, phone, email, address,
+      `SELECT shop_id, shop_name, phone, email, address, gcash_number, gcash_qr_path,
               monday_open, monday_close, tuesday_open, tuesday_close,
               wednesday_open, wednesday_close, thursday_open, thursday_close,
               friday_open, friday_close, saturday_open, saturday_close,
@@ -51,6 +51,8 @@ export async function GET() {
       phone: row.phone,
       email: row.email,
       address: row.address,
+      gcash_number: row.gcash_number,
+      gcash_qr_path: row.gcash_qr_path,
     };
 
     for (const day of DAYS) {

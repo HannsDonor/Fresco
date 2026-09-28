@@ -5,6 +5,7 @@ export interface AdminOrderRow {
   service_id: number;
   load_type: string;
   fulfillment_method: string;
+  requested_payment_method: string;
   special_instructions: string | null;
   pickup_date: string;
   pickup_time: string;
@@ -99,5 +100,7 @@ export interface AdminShopInfo {
   phone: string | null;
   email: string | null;
   address: string | null;
+  gcash_number: string | null;
+  gcash_qr_path: string | null;
   hours: Record<ShopDay, ShopHoursDay>;
 }

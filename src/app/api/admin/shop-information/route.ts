@@ -18,6 +18,8 @@ interface Payload {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  gcash_number?: string | null;
+  gcash_qr_path?: string | null;
   hours?: Partial<Record<ShopDay, HoursDay>>;
 }
 
@@ -50,7 +52,7 @@ export async function GET() {
 
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT shop_id, shop_name, phone, email, address, ${SELECT_COLUMNS}
+      `SELECT shop_id, shop_name, phone, email, address, gcash_number, gcash_qr_path, ${SELECT_COLUMNS}
        FROM shop_information
        LIMIT 1`
     );
@@ -71,6 +73,8 @@ export async function GET() {
         phone: row.phone,
         email: row.email,
         address: row.address,
+        gcash_number: row.gcash_number,
+        gcash_qr_path: row.gcash_qr_path,
         hours: buildHours(row),
       },
     });
@@ -140,6 +144,30 @@ export async function PATCH(request: Request) {
   if (body?.address !== undefined) {
     const value = typeof body.address === "string" ? body.address.trim() : null;
     updates.push("address = ?");
+    params.push(value || null);
+  }
+
+  if (body?.gcash_number !== undefined) {
+    const value = typeof body.gcash_number === "string" ? body.gcash_number.trim() : null;
+    if (value && value.length > 50) {
+      return NextResponse.json(
+        { error: "GCash number must be 50 characters or fewer." },
+        { status: 400 }
+      );
+    }
+    updates.push("gcash_number = ?");
+    params.push(value || null);
+  }
+
+  if (body?.gcash_qr_path !== undefined) {
+    const value = typeof body.gcash_qr_path === "string" ? body.gcash_qr_path.trim() : null;
+    if (value && !/^\/images\/gcash\/[A-Za-z0-9._-]+$/.test(value)) {
+      return NextResponse.json(
+        { error: "Invalid GCash QR image path." },
+        { status: 400 }
+      );
+    }
+    updates.push("gcash_qr_path = ?");
     params.push(value || null);
   }
 

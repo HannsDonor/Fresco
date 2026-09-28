@@ -90,6 +90,7 @@ interface OrderData {
   service: { name: string; starting_price: string | number };
   load_type: string;
   fulfillment_method: string;
+  payment_method: string;
   special_instructions: string | null;
   pickup_date: string;
   pickup_time: string;
@@ -310,6 +311,7 @@ export default function OrderTracking({ token }: { token: string }) {
                   />
                   <DetailRow label="Pickup Time" value={formatTime(order.pickup_time)} />
                   <DetailRow label="Method" value={order.fulfillment_method} />
+                  <DetailRow label="Payment Method" value={order.payment_method} />
                 </div>
 
                 <button

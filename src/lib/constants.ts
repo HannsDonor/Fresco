@@ -33,6 +33,15 @@ export const PAYMENT_METHODS = ["Cash", "GCash"] as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  Cash: "Pay the delivery rider in cash",
+  GCash: "Send payment via GCash",
+};
+
+export const DEFAULT_GCASH_NUMBER = "09XX XXX XXXX";
+
+export const DEFAULT_GCASH_QR_IMAGE = "/images/gcash/qrcode.png";
+
 export const PAYMENT_STATUSES = ["Unpaid", "Paid"] as const;
 
 export const SERVICE_ICONS = [

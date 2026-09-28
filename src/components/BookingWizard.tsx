@@ -3,15 +3,18 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
+  Banknote,
   BedDouble,
   CalendarDays,
   Check,
   Cloud,
   Clock,
+  Copy,
   Home,
   LoaderCircle,
   MapPin,
@@ -24,10 +27,14 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import {
+  DEFAULT_GCASH_NUMBER,
+  DEFAULT_GCASH_QR_IMAGE,
   FULFILLMENT_METHOD_LABELS,
   FULFILLMENT_METHODS,
   LOAD_TYPES,
   LOAD_TYPE_LABELS,
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHODS,
 } from "@/lib/constants";
 
 interface Service {
@@ -43,6 +50,8 @@ interface ShopInfo {
   phone: string | null;
   email: string | null;
   address: string | null;
+  gcash_number?: string | null;
+  gcash_qr_path?: string | null;
   monday_hours: string | null;
   tuesday_hours: string | null;
   wednesday_hours: string | null;
@@ -60,6 +69,7 @@ interface BookingForm {
   loadType: string;
   instructions: string;
   fulfillmentMethod: string;
+  paymentMethod: string;
   pickupDate: string;
   pickupTime: string;
 }
@@ -67,14 +77,14 @@ interface BookingForm {
 const STEPS = [
   { number: "01", title: "Customer Info" },
   { number: "02", title: "Laundry Details" },
-  { number: "03", title: "Pickup Info" },
+  { number: "03", title: "Pickup & Payment" },
   { number: "04", title: "Review" },
 ];
 
 const STEP_HEADINGS = [
   "Customer Information",
   "Laundry Details",
-  "Pickup Information",
+  "Pickup & Payment",
   "Review Your Order",
 ];
 
@@ -211,11 +221,13 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
       loadType: "",
       instructions: "",
       fulfillmentMethod: "",
+      paymentMethod: "",
       pickupDate: "",
       pickupTime: "",
     })
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [gcashCopied, setGcashCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -311,6 +323,19 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     });
   }
 
+  const gcashNumber = shop?.gcash_number?.trim() || DEFAULT_GCASH_NUMBER;
+  const gcashQrPath = shop?.gcash_qr_path?.trim() || DEFAULT_GCASH_QR_IMAGE;
+
+  async function copyGcashNumber() {
+    try {
+      await navigator.clipboard.writeText(gcashNumber);
+      setGcashCopied(true);
+      window.setTimeout(() => setGcashCopied(false), 2000);
+    } catch {
+      setGcashCopied(false);
+    }
+  }
+
   function validateStep(current: number): boolean {
     const next: Record<string, string> = {};
 
@@ -332,6 +357,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     if (current === 3) {
       if (!form.fulfillmentMethod)
         next.fulfillmentMethod = "Please choose a fulfillment method.";
+      if (!form.paymentMethod) next.paymentMethod = "Please select a payment method.";
       if (!form.pickupDate) next.pickupDate = "Please choose a pickup date.";
       else if (form.pickupDate < today) next.pickupDate = "Pickup date cannot be in the past.";
       if (!form.pickupTime) next.pickupTime = "Please choose a pickup time.";
@@ -373,6 +399,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
           service_id: form.serviceId,
           load_type: form.loadType,
           fulfillment_method: form.fulfillmentMethod,
+          requested_payment_method: form.paymentMethod,
           special_instructions: form.instructions.trim() || null,
           pickup_date: form.pickupDate,
           pickup_time: form.pickupTime,
@@ -748,6 +775,92 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                     time after accepting your order.
                   </p>
                 </div>
+                <div>
+                  <span className={labelClasses}>
+                    Payment Method <span className="text-red-500">*</span>
+                  </span>
+                  <div className="grid grid-cols-2 gap-3">
+                    {PAYMENT_METHODS.map((method) => {
+                      const selected = form.paymentMethod === method;
+                      return (
+                        <button
+                          key={method}
+                          type="button"
+                          onClick={() => setField("paymentMethod", method)}
+                          aria-pressed={selected}
+                          className={`rounded-2xl px-3 py-4 text-center ring-1 transition-all ${
+                            selected
+                              ? "bg-brand-500 text-white ring-2 ring-brand-500 shadow-lg shadow-brand-500/25"
+                              : "bg-slate-50 text-slate-700 ring-slate-200 hover:ring-brand-300"
+                          }`}
+                        >
+                          <span className="block text-base font-extrabold">{method}</span>
+                          <span
+                            className={`mt-1 hidden text-xs font-medium sm:block ${
+                              selected ? "text-brand-50" : "text-slate-500"
+                            }`}
+                          >
+                            {PAYMENT_METHOD_LABELS[method]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {errors.paymentMethod ? (
+                    <p className="mt-1.5 text-sm font-medium text-red-600">
+                      {errors.paymentMethod}
+                    </p>
+                  ) : null}
+                </div>
+
+                {form.paymentMethod === "GCash" ? (
+                  <div className="rounded-2xl border border-brand-100 bg-brand-50/70 p-4 sm:p-5">
+                    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                      <div className="shrink-0 rounded-2xl bg-white p-2 ring-1 ring-brand-100">
+                        <Image
+                          src={gcashQrPath}
+                          alt="GCash QR code"
+                          width={400}
+                          height={400}
+                          className="h-36 w-36 object-contain"
+                        />
+                      </div>
+                      <div className="text-center sm:text-left">
+                        <p className="text-sm font-extrabold text-brand-900">Pay with GCash</p>
+                        <p className="mt-1.5 text-sm leading-relaxed text-brand-800">
+                          Scan the QR code with the GCash app, or send the amount to the GCash
+                          number below. Include your order reference in the remarks.
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                          <span className="rounded-xl bg-white px-3 py-2 font-mono text-base font-extrabold tracking-wider text-brand-900 ring-1 ring-brand-100">
+                            {gcashNumber}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={copyGcashNumber}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+                          >
+                            <Copy className="h-4 w-4" />
+                            {gcashCopied ? "Copied" : "Copy number"}
+                          </button>
+                        </div>
+                        <p className="mt-2.5 text-xs font-medium text-brand-700">
+                          The rider or shop will confirm your payment.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {form.paymentMethod === "Cash" ? (
+                  <div className="flex items-start gap-3 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3.5">
+                    <Banknote className="mt-0.5 h-5 w-5 shrink-0 text-brand-500" />
+                    <p className="text-sm leading-relaxed text-brand-800">
+                      Please prepare the exact amount in cash. Pay the delivery rider when your
+                      laundry is returned.
+                    </p>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -789,6 +902,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   </h2>
                   <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                     <ReviewRow label="Method" value={form.fulfillmentMethod || "â€”"} />
+                    <ReviewRow label="Payment Method" value={form.paymentMethod || "â€”"} />
                     <ReviewRow
                       label="Date & Time"
                       value={

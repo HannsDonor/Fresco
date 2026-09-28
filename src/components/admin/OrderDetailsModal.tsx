@@ -343,6 +343,7 @@ export default function OrderDetailsModal({
               </Section>
 
               <Section title="Payment Information">
+                <Row label="Customer&apos;s Choice">{order.requested_payment_method}</Row>
                 <Row label="Payment Status">
                   <PaymentBadge status={order.payment_status} />
                 </Row>

@@ -16,6 +16,7 @@ import OrderDetailsModal from "@/components/admin/OrderDetailsModal";
 
 type StatusFilter = "all" | (typeof LAUNDRY_STATUSES)[number];
 type DateFilter = "all" | "today" | "upcoming";
+type PaymentFilter = "all" | "Paid" | "Unpaid";
 
 const DATE_FILTER_OPTIONS: { value: DateFilter; label: string }[] = [
   { value: "all", label: "All dates" },
@@ -23,18 +24,47 @@ const DATE_FILTER_OPTIONS: { value: DateFilter; label: string }[] = [
   { value: "upcoming", label: "Upcoming Pickup" },
 ];
 
+const PAYMENT_FILTER_OPTIONS: { value: PaymentFilter; label: string }[] = [
+  { value: "all", label: "Paid / Unpaid" },
+  { value: "Paid", label: "Paid" },
+  { value: "Unpaid", label: "Unpaid" },
+];
+
 const selectClasses =
   "rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10";
 
-export default function OrdersManager({ initialOrderId }: { initialOrderId?: number }) {
+export default function OrdersManager({
+  initialOrderId,
+  initialQ = "",
+  initialStatus = "",
+  initialDate = "",
+  initialPayment = "",
+  initialFrom = "",
+  initialTo = "",
+}: {
+  initialOrderId?: number;
+  initialQ?: string;
+  initialStatus?: string;
+  initialDate?: string;
+  initialPayment?: string;
+  initialFrom?: string;
+  initialTo?: string;
+}) {
   const [orders, setOrders] = useState<AdminOrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [date, setDate] = useState<DateFilter>("all");
+  const [searchInput, setSearchInput] = useState(initialQ);
+  const [q, setQ] = useState(initialQ);
+  const [status, setStatus] = useState<StatusFilter>(
+    (initialStatus as StatusFilter) || "all"
+  );
+  const [date, setDate] = useState<DateFilter>((initialDate as DateFilter) || "all");
+  const [payment, setPayment] = useState<PaymentFilter>(
+    (initialPayment as PaymentFilter) || "all"
+  );
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedOrderId, setSelectedOrderId] = useState<number | undefined>(initialOrderId);
   const skipFirstDebounce = useRef(true);
@@ -63,6 +93,9 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
         if (q) params.set("q", q);
         if (status !== "all") params.set("status", status);
         if (date !== "all") params.set("date", date);
+        if (payment !== "all") params.set("payment", payment);
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
 
         const response = await fetch(`/api/admin/orders?${params.toString()}`);
         const json = await response.json().catch(() => null);
@@ -88,7 +121,7 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [q, status, date, reloadKey]);
+  }, [q, status, date, payment, from, to, reloadKey]);
 
   const handleUpdated = useCallback(() => {
     setReloadKey((key) => key + 1);
@@ -156,6 +189,49 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
               ))}
             </select>
           </div>
+          <div className="relative">
+            <select
+              value={payment}
+              onChange={(event) => {
+                setPayment(event.target.value as PaymentFilter);
+                setError(false);
+                setLoading(true);
+              }}
+              className={`${selectClasses} pr-9`}
+              aria-label="Filter by payment status"
+            >
+              {PAYMENT_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={from}
+              onChange={(event) => {
+                setFrom(event.target.value);
+                setError(false);
+                setLoading(true);
+              }}
+              className={`${selectClasses} w-auto`}
+              aria-label="Pickup date from"
+            />
+            <span className="text-xs font-semibold text-slate-400">to</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(event) => {
+                setTo(event.target.value);
+                setError(false);
+                setLoading(true);
+              }}
+              className={`${selectClasses} w-auto`}
+              aria-label="Pickup date to"
+            />
+          </div>
         </div>
       </div>
 
@@ -203,7 +279,7 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
             <CalendarDays className="h-7 w-7" />
           </span>
           <p className="text-[15px] font-medium text-slate-600">No orders found.</p>
-          {(q || status !== "all" || date !== "all") && (
+          {(q || status !== "all" || date !== "all" || payment !== "all" || from || to) && (
             <button
               type="button"
               onClick={() => {
@@ -211,6 +287,9 @@ export default function OrdersManager({ initialOrderId }: { initialOrderId?: num
                 setQ("");
                 setStatus("all");
                 setDate("all");
+                setPayment("all");
+                setFrom("");
+                setTo("");
                 setError(false);
                 setLoading(true);
               }}

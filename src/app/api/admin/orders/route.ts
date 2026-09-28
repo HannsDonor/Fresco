@@ -41,14 +41,19 @@ export async function GET(request: Request) {
     const q = (url.searchParams.get("q") ?? "").trim();
     const status = (url.searchParams.get("status") ?? "").trim();
     const date = (url.searchParams.get("date") ?? "all").trim();
+    const payment = (url.searchParams.get("payment") ?? "").trim();
+    const from = (url.searchParams.get("from") ?? "").trim();
+    const to = (url.searchParams.get("to") ?? "").trim();
 
     const conditions: string[] = [];
     const params: string[] = [];
 
     if (q) {
-      conditions.push("(o.order_reference LIKE ? OR c.name LIKE ? OR c.phone LIKE ?)");
+      conditions.push(
+        "(o.order_reference LIKE ? OR COALESCE(o.customer_name, c.name) LIKE ? OR c.phone LIKE ? OR o.tracking_token LIKE ?)"
+      );
       const like = `%${q}%`;
-      params.push(like, like, like);
+      params.push(like, like, like, like);
     }
 
     if (status && LAUNDRY_STATUSES.includes(status as never)) {
@@ -62,6 +67,25 @@ export async function GET(request: Request) {
     } else if (date === "upcoming") {
       conditions.push("o.pickup_date >= ?");
       params.push(todayString());
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(from)) {
+      conditions.push("o.pickup_date >= ?");
+      params.push(from);
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      conditions.push("o.pickup_date <= ?");
+      params.push(to);
+    }
+
+    if (payment === "Paid") {
+      conditions.push(
+        "EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.order_id AND p.payment_status = 'Paid')"
+      );
+    } else if (payment === "Unpaid") {
+      conditions.push(
+        "NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.order_id AND p.payment_status = 'Paid')"
+      );
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

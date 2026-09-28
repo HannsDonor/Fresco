@@ -237,17 +237,17 @@ export default function ServicesManager() {
               {services.length === 1 ? "service" : "services"}
             </p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="max-h-[70vh] overflow-auto">
             <table className="w-full min-w-[980px] text-left">
               <thead>
                 <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  <th className="px-5 py-3">Service</th>
-                  <th className="px-5 py-3">Description</th>
-                  <th className="px-5 py-3">Starting Price</th>
-                  <th className="px-5 py-3 text-center">Orders</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Created</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Service</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Description</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Starting Price</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3 text-center">Orders</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Status</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Created</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

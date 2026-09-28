@@ -332,18 +332,18 @@ export default function PaymentsManager() {
               {payments.length === 1 ? "payment" : "payments"}
             </p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="max-h-[70vh] overflow-auto">
             <table className="w-full min-w-[940px] text-left">
               <thead>
                 <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  <th className="px-5 py-3">Payment</th>
-                  <th className="px-5 py-3">Order Reference</th>
-                  <th className="px-5 py-3">Customer</th>
-                  <th className="px-5 py-3">Method</th>
-                  <th className="px-5 py-3 text-right">Amount</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Payment Date</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Payment</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Order Reference</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Customer</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Method</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3 text-right">Amount</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Status</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3">Payment Date</th>
+                  <th className="sticky top-0 z-10 bg-white px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

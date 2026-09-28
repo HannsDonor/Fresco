@@ -9,7 +9,7 @@ import { TRACKING_TOKEN_STORAGE_KEY } from "@/lib/constants";
 function readSavedToken(): string {
   if (typeof window === "undefined") return "";
   try {
-    return window.localStorage.getItem(TRACKING_TOKEN_STORAGE_KEY) ?? "";
+    return (window.localStorage.getItem(TRACKING_TOKEN_STORAGE_KEY) ?? "").toUpperCase();
   } catch {
     return "";
   }
@@ -93,7 +93,7 @@ export default function TrackLookup() {
                 spellCheck={false}
                 placeholder="e.g. TRK-VJ7RW2"
                 value={value}
-                onChange={(event) => setValue(event.target.value)}
+                onChange={(event) => setValue(event.target.value.toUpperCase())}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center font-mono text-lg font-bold text-slate-900 placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10"
               />
               {error ? (

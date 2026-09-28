@@ -28,13 +28,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing required fields: name, phone." }, { status: 400 });
   }
 
+  const phoneDigits = phone.replace(/\D/g, "");
+  const normalizedPhone = /^63[0-9]{10}$/.test(phoneDigits)
+    ? `+63${phoneDigits.slice(2)}`
+    : /^09[0-9]{9}$/.test(phoneDigits)
+      ? `+63${phoneDigits.slice(1)}`
+      : phone.trim();
+
   try {
     const [result] = await pool.execute<ResultSetHeader>(
       "INSERT INTO customers (name, phone, address) VALUES (?, ?, ?)",
-      [name, phone, address ?? null]
+      [name, normalizedPhone, address ?? null]
     );
     return NextResponse.json({ success: true, customer_id: result.insertId }, { status: 201 });
   } catch {
-    return NextResponse.json({ success: false, error: "Failed to create customer." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create customer." }, { status: 500 });
   }
 }

@@ -73,6 +73,8 @@ INSERT INTO `customers` (`customer_id`, `name`, `phone`, `address`, `created_at`
 CREATE TABLE `laundry_orders` (
   `order_id` int(11) NOT NULL,
   `customer_id` int(11) NOT NULL,
+  `customer_name` varchar(50) DEFAULT NULL,
+  `delivery_address` varchar(255) DEFAULT NULL,
   `order_reference` varchar(30) NOT NULL,
   `tracking_token` varchar(100) NOT NULL,
   `service_id` int(11) NOT NULL,

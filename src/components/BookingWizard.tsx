@@ -109,18 +109,48 @@ const phoneInputClasses =
 
 const BOOKING_FORM_STORAGE_KEY = "frescoBookingForm";
 
+const SAVED_FORM_FIELDS = [
+  "serviceId",
+  "loadType",
+  "instructions",
+  "fulfillmentMethod",
+  "paymentMethod",
+  "pickupDate",
+  "pickupTime",
+] as const satisfies readonly (keyof BookingForm)[];
+
+type SavedBookingForm = Partial<Pick<BookingForm, (typeof SAVED_FORM_FIELDS)[number]>>;
+
 function loadSavedForm(initial: BookingForm): BookingForm {
   if (typeof window === "undefined") return initial;
   try {
     const raw = window.localStorage.getItem(BOOKING_FORM_STORAGE_KEY);
     if (!raw) return initial;
-    const saved = JSON.parse(raw) as Partial<BookingForm>;
-    const merged = { ...initial, ...saved };
+    const saved = JSON.parse(raw) as SavedBookingForm;
+    const merged: BookingForm = { ...initial };
+    for (const field of SAVED_FORM_FIELDS) {
+      const value = saved[field];
+      if (value !== undefined && value !== null) {
+        Object.assign(merged, { [field]: value });
+      }
+    }
     if (initial.serviceId) merged.serviceId = initial.serviceId;
+    window.localStorage.setItem(
+      BOOKING_FORM_STORAGE_KEY,
+      JSON.stringify(pickSavedFields(merged))
+    );
     return merged;
   } catch {
     return initial;
   }
+}
+
+function pickSavedFields(form: BookingForm): SavedBookingForm {
+  const saved: SavedBookingForm = {};
+  for (const field of SAVED_FORM_FIELDS) {
+    Object.assign(saved, { [field]: form[field] });
+  }
+  return saved;
 }
 
 const labelClasses = "mb-2 block text-sm font-semibold text-slate-700";
@@ -266,7 +296,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(BOOKING_FORM_STORAGE_KEY, JSON.stringify(form));
+      window.localStorage.setItem(BOOKING_FORM_STORAGE_KEY, JSON.stringify(pickSavedFields(form)));
     } catch {
       // Storage unavailable — ignore.
     }

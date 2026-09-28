@@ -18,7 +18,7 @@ export async function GET(
               DATE_FORMAT(o.pickup_time, '%H:%i') AS pickup_time,
               o.order_status, o.total_amount,
               o.created_at,
-              c.name AS customer_name,
+              COALESCE(o.customer_name, c.name) AS customer_name,
               s.name AS service_name, s.starting_price
        FROM laundry_orders o
        JOIN customers c ON c.customer_id = o.customer_id

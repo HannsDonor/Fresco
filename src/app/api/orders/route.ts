@@ -141,31 +141,11 @@ export async function POST(request: Request) {
     const service = serviceRows[0];
     const totalAmount = Number(service.starting_price);
 
-    const [customerRows] = await connection.execute<RowDataPacket[]>(
-      "SELECT customer_id FROM customers WHERE phone = ? LIMIT 1",
-      [phoneIntl]
+    const [customerResult] = await connection.execute<ResultSetHeader>(
+      "INSERT INTO customers (name, phone, address) VALUES (?, ?, ?)",
+      [name, phoneIntl, address]
     );
-
-    let customerId: number;
-    if (customerRows[0]) {
-      customerId = customerRows[0].customer_id;
-      await connection.execute(
-        "UPDATE customers SET name = ? WHERE customer_id = ?",
-        [name, customerId]
-      );
-      if (address) {
-        await connection.execute(
-          "UPDATE customers SET address = ? WHERE customer_id = ?",
-          [address, customerId]
-        );
-      }
-    } else {
-      const [customerResult] = await connection.execute<ResultSetHeader>(
-        "INSERT INTO customers (name, phone, address) VALUES (?, ?, ?)",
-        [name, phoneIntl, address]
-      );
-      customerId = customerResult.insertId;
-    }
+    const customerId = customerResult.insertId;
 
     const [referenceRows] = await connection.execute<RowDataPacket[]>(
       `SELECT order_reference
@@ -196,12 +176,14 @@ export async function POST(request: Request) {
 
     const [orderResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO laundry_orders
-        (customer_id, order_reference, tracking_token, service_id,
-         load_type, fulfillment_method, requested_payment_method, special_instructions,
+        (customer_id, customer_name, delivery_address, order_reference, tracking_token,
+         service_id, load_type, fulfillment_method, requested_payment_method, special_instructions,
          pickup_date, pickup_time, order_status, total_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)`,
       [
         customerId,
+        name,
+        address,
         orderReference,
         trackingToken,
         serviceId,
@@ -234,8 +216,9 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
     await connection.rollback();
+    console.error("POST /api/orders failed:", error);
     return NextResponse.json(
       { success: false, error: "We couldn't submit your request. Please try again." },
       { status: 500 }

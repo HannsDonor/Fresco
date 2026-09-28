@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home, Radar, WashingMachine, LoaderCircle } from "lucide-react";
 import { TRACKING_TOKEN_STORAGE_KEY } from "@/lib/constants";
+
+const SAVED_TOKEN_EVENT = "fresco-track-saved-token";
 
 function readSavedToken(): string {
   if (typeof window === "undefined") return "";
@@ -15,10 +17,28 @@ function readSavedToken(): string {
   }
 }
 
+function subscribeToSavedToken(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(SAVED_TOKEN_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(SAVED_TOKEN_EVENT, onStoreChange);
+  };
+}
+
+function writeSavedToken(token: string) {
+  try {
+    window.localStorage.setItem(TRACKING_TOKEN_STORAGE_KEY, token);
+  } catch {
+    return;
+  }
+  window.dispatchEvent(new Event(SAVED_TOKEN_EVENT));
+}
+
 export default function TrackLookup() {
   const router = useRouter();
-  const [value, setValue] = useState(readSavedToken);
-  const [savedToken, setSavedToken] = useState(readSavedToken);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const savedToken = useSyncExternalStore(subscribeToSavedToken, readSavedToken, () => "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,7 +46,7 @@ export default function TrackLookup() {
     event.preventDefault();
     setError(null);
 
-    const token = value.trim().toUpperCase();
+    const token = (inputRef.current?.value ?? "").trim().toUpperCase();
     if (!token) {
       setError("Please enter your tracking ID.");
       return;
@@ -38,12 +58,7 @@ export default function TrackLookup() {
         ? token
         : `TRK-${token}`;
 
-    try {
-      window.localStorage.setItem(TRACKING_TOKEN_STORAGE_KEY, normalized);
-    } catch {
-      // Storage unavailable — ignore.
-    }
-    setSavedToken(normalized);
+    writeSavedToken(normalized);
 
     setSubmitting(true);
     router.push(`/track/${encodeURIComponent(normalized)}`);
@@ -87,13 +102,17 @@ export default function TrackLookup() {
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4">
               <input
+                key={savedToken}
+                ref={inputRef}
                 type="text"
                 inputMode="text"
                 autoCapitalize="characters"
                 spellCheck={false}
                 placeholder="e.g. TRK-VJ7RW2"
-                value={value}
-                onChange={(event) => setValue(event.target.value.toUpperCase())}
+                defaultValue={savedToken}
+                onChange={(event) => {
+                  event.target.value = event.target.value.toUpperCase();
+                }}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center font-mono text-lg font-bold text-slate-900 placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10"
               />
               {error ? (

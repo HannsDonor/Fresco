@@ -35,6 +35,21 @@ const KPI_CARDS: KpiCard[] = [
   { key: "todayOrders", label: "Today's Orders", icon: CalendarDays, iconClasses: "bg-brand-100 text-brand-600" },
 ];
 
+const cardClasses = "rounded-2xl bg-white shadow-sm ring-1 ring-brand-100";
+const emptyStateClasses =
+  "mt-5 rounded-xl bg-brand-50/70 px-4 py-10 text-center text-sm font-medium text-slate-500 ring-1 ring-brand-100";
+const tableHeadClasses =
+  "sticky top-0 z-10 bg-white pb-3 text-xs font-semibold uppercase tracking-wide text-slate-400";
+
+function CardHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-base font-bold text-slate-900">{title}</h2>
+      {action}
+    </div>
+  );
+}
+
 function SkeletonKpi() {
   return (
     <div className="rounded-2xl bg-white p-5 ring-1 ring-brand-100">
@@ -102,7 +117,7 @@ export default function AdminDashboard() {
   const summary = data?.summary;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
           Dashboard
@@ -113,7 +128,7 @@ export default function AdminDashboard() {
       </div>
 
       {loading ? (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
             {Array.from({ length: 6 }).map((_, index) => (
               <SkeletonKpi key={index} />
@@ -156,22 +171,19 @@ export default function AdminDashboard() {
           </button>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
             {KPI_CARDS.map((card) => {
               const Icon = card.icon;
               return (
-                <div
-                  key={card.key}
-                  className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-brand-100"
-                >
+                <div key={card.key} className={`${cardClasses} flex flex-col p-5`}>
                   <span
                     className={`flex h-11 w-11 items-center justify-center rounded-xl ${card.iconClasses}`}
                   >
                     <Icon className="h-5 w-5" strokeWidth={2.2} />
                   </span>
                   <p className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">
-                    {summary ? summary[card.key].toLocaleString() : "—"}
+                    {summary ? summary[card.key].toLocaleString() : "-"}
                   </p>
                   <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {card.label}
@@ -193,6 +205,85 @@ export default function AdminDashboard() {
   );
 }
 
+interface DonutSegment {
+  key: string;
+  color: string;
+  dash: number;
+  offset: number;
+}
+
+function StatusDonut({
+  statusCounts,
+  total,
+}: {
+  statusCounts: DashboardStatusCount[];
+  total: number;
+}) {
+  const size = 168;
+  const strokeWidth = 22;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const visible = statusCounts.filter((entry) => entry.count > 0);
+
+  const segments = visible.reduce<DonutSegment[]>((accumulated, entry) => {
+    const consumed = accumulated.reduce((sum, segment) => sum + segment.dash, 0);
+    const dash = (entry.count / total) * circumference;
+    return [
+      ...accumulated,
+      {
+        key: entry.status,
+        color: statusColor(entry.status).hex,
+        dash,
+        offset: -consumed,
+      },
+    ];
+  }, []);
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="-rotate-90"
+        role="img"
+        aria-label="Order status breakdown"
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#f1f5f9"
+          strokeWidth={strokeWidth}
+        />
+        {segments.map((segment) => (
+          <circle
+            key={segment.key}
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={segment.color}
+            strokeWidth={strokeWidth}
+            strokeDasharray={`${segment.dash} ${circumference - segment.dash}`}
+            strokeDashoffset={segment.offset}
+            strokeLinecap="butt"
+          >
+            <title>{`${segment.key}: ${visible.find((entry) => entry.status === segment.key)?.count}`}</title>
+          </circle>
+        ))}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-extrabold tracking-tight text-slate-900">
+          {total.toLocaleString()}
+        </span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Orders
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function StatusOverview({
   statusCounts,
   total,
@@ -201,45 +292,48 @@ function StatusOverview({
   total: number;
 }) {
   const hasOrders = total > 0;
+  const max = statusCounts.reduce((peak, entry) => Math.max(peak, entry.count), 0);
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-brand-100 lg:col-span-2">
-      <h2 className="text-base font-bold text-slate-900">Order Status Overview</h2>
+    <div className={`${cardClasses} flex flex-col p-6 lg:col-span-2`}>
+      <CardHeader title="Order Status Overview" />
 
       {!hasOrders ? (
-        <div className="mt-6 rounded-xl bg-brand-50/70 px-4 py-8 text-center ring-1 ring-brand-100">
-          <p className="text-sm font-medium text-slate-500">No orders yet.</p>
-        </div>
+        <div className={emptyStateClasses}>No orders yet.</div>
       ) : (
-        <>
-          <div className="mt-6 flex h-3.5 w-full overflow-hidden rounded-full bg-slate-100">
-            {statusCounts.map(
-              (entry) =>
-                entry.count > 0 && (
-                  <div
-                    key={entry.status}
-                    title={`${entry.status}: ${entry.count}`}
-                    className={statusColor(entry.status).bar}
-                    style={{ width: `${(entry.count / total) * 100}%` }}
-                  />
-                )
-            )}
-          </div>
+        <div className="mt-5 flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+          <StatusDonut statusCounts={statusCounts} total={total} />
 
-          <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-            {statusCounts.map((entry) => (
-              <li key={entry.status} className="flex items-center gap-2.5">
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor(entry.status).dot}`} />
-                <span className="flex-1 truncate text-sm font-medium text-slate-600">
-                  {entry.status}
-                </span>
-                <span className="text-sm font-bold text-slate-900">
-                  {entry.count.toLocaleString()}
-                </span>
-              </li>
-            ))}
+          <ul className="w-full min-w-0 flex-1 space-y-2.5">
+            {statusCounts.map((entry) => {
+              const share = total > 0 ? Math.round((entry.count / total) * 100) : 0;
+              return (
+                <li key={entry.status}>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="flex min-w-0 items-center gap-2 font-medium text-slate-600">
+                      <span
+                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor(entry.status).dot}`}
+                      />
+                      <span className="truncate">{entry.status}</span>
+                    </span>
+                    <span className="flex shrink-0 items-baseline gap-1.5">
+                      <span className="font-bold text-slate-900">
+                        {entry.count.toLocaleString()}
+                      </span>
+                      <span className="text-xs font-medium text-slate-400">{share}%</span>
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-full rounded-full ${statusColor(entry.status).bar}`}
+                      style={{ width: `${max > 0 ? (entry.count / max) * 100 : 0}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
-        </>
+        </div>
       )}
     </div>
   );
@@ -247,33 +341,33 @@ function StatusOverview({
 
 function RecentOrders({ orders }: { orders: AdminOrderRow[] }) {
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-brand-100 lg:col-span-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-bold text-slate-900">Recent Orders</h2>
-        <Link
-          href="/admin/orders"
-          className="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
-        >
-          View all
-        </Link>
-      </div>
+    <div className={`${cardClasses} flex flex-col p-6 lg:col-span-3`}>
+      <CardHeader
+        title="Recent Orders"
+        action={
+          <Link
+            href="/admin/orders"
+            className="text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
+          >
+            View all
+          </Link>
+        }
+      />
 
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-xl bg-brand-50/70 px-4 py-8 text-center ring-1 ring-brand-100">
-          <p className="text-sm font-medium text-slate-500">No orders yet.</p>
-        </div>
+        <div className={emptyStateClasses}>No orders yet.</div>
       ) : (
-        <div className="mt-5 overflow-x-auto">
+        <div className="mt-5 max-h-80 overflow-auto">
           <table className="w-full min-w-[640px] text-left">
             <thead>
-              <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                <th className="pb-3 pr-4">Order Reference</th>
-                <th className="pb-3 pr-4">Customer</th>
-                <th className="pb-3 pr-4">Service</th>
-                <th className="pb-3 pr-4">Pickup Date</th>
-                <th className="pb-3 pr-4">Status</th>
-                <th className="pb-3 pr-4 text-right">Total</th>
-                <th className="pb-3 text-right">Action</th>
+              <tr className="border-b border-slate-100">
+                <th className={`${tableHeadClasses} pr-4`}>Order Reference</th>
+                <th className={`${tableHeadClasses} pr-4`}>Customer</th>
+                <th className={`${tableHeadClasses} pr-4`}>Service</th>
+                <th className={`${tableHeadClasses} pr-4`}>Pickup Date</th>
+                <th className={tableHeadClasses}>Status</th>
+                <th className={`${tableHeadClasses} pr-4 text-right`}>Total</th>
+                <th className={`${tableHeadClasses} text-right`}>Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -314,28 +408,24 @@ function RecentOrders({ orders }: { orders: AdminOrderRow[] }) {
 
 function TodayPickups({ orders }: { orders: AdminOrderRow[] }) {
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-brand-100">
+    <div className={`${cardClasses} flex flex-col p-6`}>
       <div className="flex items-center gap-2.5">
         <h2 className="text-base font-bold text-slate-900">Today&apos;s Pickup Schedule</h2>
         <CalendarDays className="h-4 w-4 text-brand-500" />
       </div>
 
       {orders.length === 0 ? (
-        <div className="mt-6 rounded-xl bg-brand-50/70 px-4 py-10 text-center ring-1 ring-brand-100">
-          <p className="text-sm font-medium text-slate-500">
-            No pickups scheduled for today.
-          </p>
-        </div>
+        <div className={emptyStateClasses}>No pickups scheduled for today.</div>
       ) : (
-        <div className="mt-5 overflow-x-auto">
+        <div className="mt-5 max-h-72 overflow-auto">
           <table className="w-full min-w-[560px] text-left">
             <thead>
-              <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                <th className="pb-3 pr-4">Order Reference</th>
-                <th className="pb-3 pr-4">Customer</th>
-                <th className="pb-3 pr-4">Pickup Time</th>
-                <th className="pb-3 pr-4">Service</th>
-                <th className="pb-3 text-right">Status</th>
+              <tr className="border-b border-slate-100">
+                <th className={`${tableHeadClasses} pr-4`}>Order Reference</th>
+                <th className={`${tableHeadClasses} pr-4`}>Customer</th>
+                <th className={`${tableHeadClasses} pr-4`}>Pickup Time</th>
+                <th className={`${tableHeadClasses} pr-4`}>Service</th>
+                <th className={`${tableHeadClasses} text-right`}>Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

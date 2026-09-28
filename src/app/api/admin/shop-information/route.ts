@@ -148,15 +148,16 @@ export async function PATCH(request: Request) {
   }
 
   if (body?.gcash_number !== undefined) {
-    const value = typeof body.gcash_number === "string" ? body.gcash_number.trim() : null;
-    if (value && value.length > 50) {
+    const raw = typeof body.gcash_number === "string" ? body.gcash_number : "";
+    const value = raw.replace(/\D/g, "") || null;
+    if (value && !/^09\d{9}$/.test(value)) {
       return NextResponse.json(
-        { error: "GCash number must be 50 characters or fewer." },
+        { error: "GCash number must be an 11-digit Philippine mobile number starting with 09." },
         { status: 400 }
       );
     }
     updates.push("gcash_number = ?");
-    params.push(value || null);
+    params.push(value);
   }
 
   if (body?.gcash_qr_path !== undefined) {

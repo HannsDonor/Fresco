@@ -621,6 +621,8 @@ export default function OrderDetailsModal({
                         id={`pay-amount-${orderId}`}
                         type="number"
                         min="0"
+                        max="999999.99"
+                        maxLength={9}
                         step="0.01"
                         value={payAmount}
                         onChange={(event) => setPayAmount(event.target.value)}

@@ -831,6 +831,20 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                           Scan the QR code with the GCash app, or send the amount to the GCash
                           number below. Include your order reference in the remarks.
                         </p>
+                        <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 ring-1 ring-brand-100 sm:max-w-xs">
+                          <span className="text-sm font-semibold text-slate-600">
+                            Amount to send
+                          </span>
+                          <span className="text-xl font-extrabold text-brand-600">
+                            {selectedService
+                              ? formatCurrency(selectedService.starting_price)
+                              : "—"}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-xs font-medium text-brand-700">
+                          Based on the starting price. Final amount may be adjusted after weighing
+                          your laundry.
+                        </p>
                         <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                           <span className="rounded-xl bg-white px-3 py-2 font-mono text-base font-extrabold tracking-wider text-brand-900 ring-1 ring-brand-100">
                             {gcashNumber}

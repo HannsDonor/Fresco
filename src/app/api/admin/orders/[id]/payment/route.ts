@@ -43,6 +43,13 @@ export async function PATCH(
     );
   }
 
+  if (typeof amount === "number" && amount > 999999.99) {
+    return NextResponse.json(
+      { success: false, error: "Amount cannot exceed 999,999.99." },
+      { status: 400 }
+    );
+  }
+
   if (payment_method !== undefined && !PAYMENT_METHODS.includes(payment_method as never)) {
     return NextResponse.json(
       { success: false, error: `Invalid payment method. Allowed: ${PAYMENT_METHODS.join(", ")}.` },

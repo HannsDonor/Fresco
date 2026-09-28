@@ -166,6 +166,8 @@ export default function ServiceFormModal({
                 id="service-price"
                 type="number"
                 min="0"
+                max="999999.99"
+                maxLength={9}
                 step="0.01"
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}

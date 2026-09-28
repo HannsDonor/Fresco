@@ -37,6 +37,8 @@ const EMPTY_HOURS = SHOP_DAYS.reduce(
   {} as Record<ShopDay, ShopHoursDay>
 );
 
+const GCASH_NUMBER_MAX_LENGTH = 11;
+
 const EMPTY_CLOSED = SHOP_DAYS.reduce(
   (acc, day) => {
     acc[day] = false;
@@ -88,6 +90,8 @@ export default function ShopInfoManager() {
   const [qrInputKey, setQrInputKey] = useState(0);
 
   const [saving, setSaving] = useState(false);
+  const [savingGcash, setSavingGcash] = useState(false);
+  const [savedGcashNumber, setSavedGcashNumber] = useState("");
   const [banner, setBanner] = useState<Banner | null>(null);
 
   useEffect(() => {
@@ -109,6 +113,7 @@ export default function ShopInfoManager() {
         setEmail(data.email ?? "");
         setAddress(data.address ?? "");
         setGcashNumber(data.gcash_number ?? "");
+        setSavedGcashNumber(data.gcash_number ?? "");
         setGcashQrPath(data.gcash_qr_path ?? null);
         const nextClosed = { ...EMPTY_CLOSED };
         for (const day of SHOP_DAYS) {
@@ -149,6 +154,46 @@ export default function ShopInfoManager() {
 
   function markDirty() {
     setBanner(null);
+  }
+
+  const gcashDigits = gcashNumber.replace(/\D/g, "");
+
+  function handleGcashNumberChange(raw: string) {
+    setGcashNumber(raw.replace(/\D/g, "").slice(0, GCASH_NUMBER_MAX_LENGTH));
+    markDirty();
+  }
+
+  async function handleSaveGcashNumber() {
+    const digits = gcashNumber.replace(/\D/g, "");
+    if (digits && !/^09\d{9}$/.test(digits)) {
+      setBanner({
+        type: "error",
+        text: "GCash number must be an 11-digit Philippine mobile number starting with 09.",
+      });
+      return;
+    }
+
+    setSavingGcash(true);
+    setBanner(null);
+    try {
+      const response = await fetch("/api/admin/shop-information", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gcash_number: digits || null }),
+      });
+      const json = await response.json().catch(() => null);
+      if (!response.ok) {
+        setBanner({ type: "error", text: json?.error ?? "Failed to save the GCash number." });
+        return;
+      }
+      setSavedGcashNumber(digits);
+      setGcashNumber(digits);
+      setBanner({ type: "success", text: "GCash number saved." });
+    } catch {
+      setBanner({ type: "error", text: "Unable to reach the server. Please try again." });
+    } finally {
+      setSavingGcash(false);
+    }
   }
 
   async function handleQrUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -213,6 +258,15 @@ export default function ShopInfoManager() {
       return;
     }
 
+    const digits = gcashNumber.replace(/\D/g, "");
+    if (digits && !/^09\d{9}$/.test(digits)) {
+      setBanner({
+        type: "error",
+        text: "GCash number must be an 11-digit Philippine mobile number starting with 09.",
+      });
+      return;
+    }
+
     setSaving(true);
     setBanner(null);
     try {
@@ -221,7 +275,7 @@ export default function ShopInfoManager() {
         phone: phone.trim() || null,
         email: email.trim() || null,
         address: address.trim() || null,
-        gcash_number: gcashNumber.trim() || null,
+        gcash_number: digits || null,
         hours: SHOP_DAYS.reduce((acc, day) => {
           const isClosed = closedDays[day];
           acc[day] = {
@@ -421,17 +475,17 @@ export default function ShopInfoManager() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white shadow-sm ring-1 ring-brand-100">
+          <div className="flex h-full flex-col rounded-2xl bg-white shadow-sm ring-1 ring-brand-100 lg:row-span-2">
             <div className="flex items-center gap-2.5 border-b border-slate-100 px-6 py-4">
               <Clock className="h-5 w-5 text-brand-500" />
               <h2 className="text-base font-bold text-slate-900">Operating Hours</h2>
             </div>
-            <div className="px-6 py-5">
+            <div className="flex flex-1 flex-col px-6 py-5">
               <p className="mb-4 text-xs font-medium text-slate-500">
                 Tick <span className="font-bold">Closed</span> on days the shop is not open.
                 The shop is treated as closed when both times are empty.
               </p>
-              <div className="space-y-3">
+              <div className="flex flex-1 flex-col gap-3">
                 {SHOP_DAYS.map((day) => {
                   const dayHours = hours[day];
                   const closed = closedDays[day];
@@ -441,7 +495,7 @@ export default function ShopInfoManager() {
                   return (
                     <div
                       key={day}
-                      className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex flex-1 flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center justify-between gap-3 sm:w-56">
                         <div className="sm:w-36">
@@ -503,12 +557,12 @@ export default function ShopInfoManager() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white shadow-sm ring-1 ring-brand-100 lg:col-span-2">
+          <div className="rounded-2xl bg-white shadow-sm ring-1 ring-brand-100">
             <div className="flex items-center gap-2.5 border-b border-slate-100 px-6 py-4">
               <QrCode className="h-5 w-5 text-brand-500" />
               <h2 className="text-base font-bold text-slate-900">GCash Payments</h2>
             </div>
-            <div className="grid gap-6 px-6 py-5 lg:grid-cols-2">
+            <div className="space-y-6 px-6 py-5">
               <div>
                 <label
                   htmlFor="gcash-number"
@@ -516,26 +570,54 @@ export default function ShopInfoManager() {
                 >
                   GCash Number
                 </label>
-                <input
-                  id="gcash-number"
-                  type="text"
-                  value={gcashNumber}
-                  maxLength={50}
-                  onChange={(event) => {
-                    setGcashNumber(event.target.value);
-                    markDirty();
-                  }}
-                  placeholder="e.g. 0917 123 4567"
-                  className={inputClasses}
-                />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <input
+                    id="gcash-number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    value={gcashNumber}
+                    maxLength={GCASH_NUMBER_MAX_LENGTH}
+                    onChange={(event) => handleGcashNumberChange(event.target.value)}
+                    placeholder="09171234567"
+                    className={`${inputClasses} sm:max-w-64`}
+                  />
+                  <button
+                    type="button"
+                    disabled={savingGcash || loading || !info || gcashDigits === savedGcashNumber}
+                    onClick={handleSaveGcashNumber}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingGcash ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Save Number
+                      </>
+                    )}
+                  </button>
+                  {gcashDigits === savedGcashNumber && !savingGcash ? (
+                    <span className="shrink-0 text-xs font-semibold text-emerald-600">Saved</span>
+                  ) : null}
+                </div>
                 <p className="mt-2 text-xs font-medium text-slate-500">
-                  Shown to customers who choose GCash while booking. Click Save Changes to apply.
+                  Up to {GCASH_NUMBER_MAX_LENGTH} digits, starting with 09 (e.g.{" "}
+                  <span className="font-semibold text-slate-600">0917 123 4567</span>). Leave empty to
+                  clear.
                 </p>
 
-                <div className="mt-6">
-                  <span className="mb-2 block text-sm font-semibold text-slate-700">
+                <div>
+                  <label
+                    htmlFor="gcash-qr"
+                    className="mb-2 block text-sm font-semibold text-slate-700"
+                  >
                     QR Code Image
-                  </span>
+                  </label>
                   <div className="flex items-start gap-4">
                     <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl bg-slate-50 p-2 ring-1 ring-slate-200">
                       {gcashQrPath ? (
@@ -579,24 +661,11 @@ export default function ShopInfoManager() {
                         </p>
                       ) : null}
                       <p className="text-xs font-medium text-slate-500">
-                        PNG, JPG, or WEBP up to 2 MB. Uploaded files are stored in{" "}
-                        <code className="rounded bg-slate-100 px-1 py-0.5 text-[11px]">
-                          public/images/gcash/
-                        </code>
-                        .
+                        PNG, JPG, or WEBP up to 2 MB.
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="h-fit rounded-2xl bg-brand-50/70 p-4 text-sm leading-relaxed text-brand-800 ring-1 ring-brand-100">
-                <p className="font-bold">How this appears to customers</p>
-                <p className="mt-1.5">
-                  When a customer picks <span className="font-semibold">GCash</span> in the booking
-                  flow, step 3 shows this QR code with the number and a copy button. If no image is
-                  set, the bundled placeholder is shown instead.
-                </p>
               </div>
             </div>
           </div>

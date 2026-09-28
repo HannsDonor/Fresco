@@ -13,7 +13,7 @@ export async function GET(
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT o.order_id, o.order_reference, o.tracking_token,
-              o.load_type, o.special_instructions,
+              o.load_type, o.fulfillment_method, o.special_instructions,
               DATE_FORMAT(o.pickup_date, '%Y-%m-%d') AS pickup_date,
               DATE_FORMAT(o.pickup_time, '%H:%i') AS pickup_time,
               o.order_status, o.total_amount,
@@ -54,6 +54,7 @@ export async function GET(
           starting_price: order.starting_price,
         },
         load_type: order.load_type,
+        fulfillment_method: order.fulfillment_method,
         special_instructions: order.special_instructions,
         pickup_date: order.pickup_date,
         pickup_time: order.pickup_time,

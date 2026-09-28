@@ -23,7 +23,12 @@ import {
   Wind,
   type LucideIcon,
 } from "lucide-react";
-import { LOAD_TYPES, LOAD_TYPE_LABELS } from "@/lib/constants";
+import {
+  FULFILLMENT_METHOD_LABELS,
+  FULFILLMENT_METHODS,
+  LOAD_TYPES,
+  LOAD_TYPE_LABELS,
+} from "@/lib/constants";
 
 interface Service {
   service_id: number;
@@ -54,6 +59,7 @@ interface BookingForm {
   serviceId: number;
   loadType: string;
   instructions: string;
+  fulfillmentMethod: string;
   pickupDate: string;
   pickupTime: string;
 }
@@ -204,6 +210,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
       serviceId: initialServiceId ?? 0,
       loadType: "",
       instructions: "",
+      fulfillmentMethod: "",
       pickupDate: "",
       pickupTime: "",
     })
@@ -323,6 +330,8 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     }
 
     if (current === 3) {
+      if (!form.fulfillmentMethod)
+        next.fulfillmentMethod = "Please choose a fulfillment method.";
       if (!form.pickupDate) next.pickupDate = "Please choose a pickup date.";
       else if (form.pickupDate < today) next.pickupDate = "Pickup date cannot be in the past.";
       if (!form.pickupTime) next.pickupTime = "Please choose a pickup time.";
@@ -363,6 +372,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
           address: form.address.trim(),
           service_id: form.serviceId,
           load_type: form.loadType,
+          fulfillment_method: form.fulfillmentMethod,
           special_instructions: form.instructions.trim() || null,
           pickup_date: form.pickupDate,
           pickup_time: form.pickupTime,
@@ -638,6 +648,43 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
             {step === 3 ? (
               <div className="space-y-5">
                 <div>
+                  <span className={labelClasses}>
+                    Fulfillment Method <span className="text-red-500">*</span>
+                  </span>
+                  <div className="grid grid-cols-2 gap-3">
+                    {FULFILLMENT_METHODS.map((method) => {
+                      const selected = form.fulfillmentMethod === method;
+                      return (
+                        <button
+                          key={method}
+                          type="button"
+                          onClick={() => setField("fulfillmentMethod", method)}
+                          aria-pressed={selected}
+                          className={`rounded-2xl px-3 py-4 text-center ring-1 transition-all ${
+                            selected
+                              ? "bg-brand-500 text-white ring-2 ring-brand-500 shadow-lg shadow-brand-500/25"
+                              : "bg-slate-50 text-slate-700 ring-slate-200 hover:ring-brand-300"
+                          }`}
+                        >
+                          <span className="block text-base font-extrabold">{method}</span>
+                          <span
+                            className={`mt-1 hidden text-xs font-medium sm:block ${
+                              selected ? "text-brand-50" : "text-slate-500"
+                            }`}
+                          >
+                            {FULFILLMENT_METHOD_LABELS[method]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {errors.fulfillmentMethod ? (
+                    <p className="mt-1.5 text-sm font-medium text-red-600">
+                      {errors.fulfillmentMethod}
+                    </p>
+                  ) : null}
+                </div>
+                <div>
                   <label htmlFor="pickupDate" className={labelClasses}>
                     Preferred Pickup Date <span className="text-red-500">*</span>
                   </label>
@@ -741,6 +788,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                     Pickup
                   </h2>
                   <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                    <ReviewRow label="Method" value={form.fulfillmentMethod || "â€”"} />
                     <ReviewRow
                       label="Date & Time"
                       value={

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
-import { LOAD_TYPES } from "@/lib/constants";
+import { FULFILLMENT_METHODS, LOAD_TYPES } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
     address?: unknown;
     service_id?: unknown;
     load_type?: unknown;
+    fulfillment_method?: unknown;
     special_instructions?: unknown;
     pickup_date?: unknown;
     pickup_time?: unknown;
@@ -71,6 +72,15 @@ export async function POST(request: Request) {
   if (!(LOAD_TYPES as readonly string[]).includes(loadType)) {
     return NextResponse.json(
       { success: false, error: "Please select a load type: Small, Medium, or Large." },
+      { status: 400 }
+    );
+  }
+
+  const fulfillmentMethod =
+    typeof body?.fulfillment_method === "string" ? body.fulfillment_method : "";
+  if (!(FULFILLMENT_METHODS as readonly string[]).includes(fulfillmentMethod)) {
+    return NextResponse.json(
+      { success: false, error: "Please select how you would like to receive your laundry." },
       { status: 400 }
     );
   }
@@ -173,15 +183,16 @@ export async function POST(request: Request) {
     const [orderResult] = await connection.execute<ResultSetHeader>(
       `INSERT INTO laundry_orders
         (customer_id, order_reference, tracking_token, service_id,
-         load_type, special_instructions, pickup_date,
+         load_type, fulfillment_method, special_instructions, pickup_date,
          pickup_time, order_status, total_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', ?)`,
       [
         customerId,
         orderReference,
         trackingToken,
         serviceId,
         loadType,
+        fulfillmentMethod,
         instructions || null,
         pickupDate,
         pickupTime,

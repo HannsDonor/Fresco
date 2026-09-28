@@ -332,6 +332,7 @@ export default function OrderDetailsModal({
               <Section title="Laundry Information">
                 <Row label="Service">{order.service_name}</Row>
                 <Row label="Load Type">{loadTypeLabel(order.load_type)}</Row>
+                <Row label="Method">{order.fulfillment_method}</Row>
                 <Row label="Special Instructions">{order.special_instructions || "—"}</Row>
                 <Row label="Total Amount">{formatPrice(order.total_amount)}</Row>
               </Section>

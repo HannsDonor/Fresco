@@ -4,6 +4,7 @@ export interface AdminOrderRow {
   tracking_token: string;
   service_id: number;
   load_type: string;
+  fulfillment_method: string;
   special_instructions: string | null;
   pickup_date: string;
   pickup_time: string;

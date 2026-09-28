@@ -77,6 +77,7 @@ CREATE TABLE `laundry_orders` (
   `tracking_token` varchar(100) NOT NULL,
   `service_id` int(11) NOT NULL,
   `load_type` enum('Small','Medium','Large') NOT NULL,
+  `fulfillment_method` enum('Pickup','Pickup & Deliver') NOT NULL DEFAULT 'Pickup',
   `special_instructions` text DEFAULT NULL,
   `pickup_date` date NOT NULL,
   `pickup_time` time NOT NULL,

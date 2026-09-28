@@ -14,6 +14,15 @@ export const LOAD_TYPES = ["Small", "Medium", "Large"] as const;
 
 export type LoadType = (typeof LOAD_TYPES)[number];
 
+export const FULFILLMENT_METHODS = ["Pickup", "Pickup & Deliver"] as const;
+
+export type FulfillmentMethod = (typeof FULFILLMENT_METHODS)[number];
+
+export const FULFILLMENT_METHOD_LABELS: Record<FulfillmentMethod, string> = {
+  [FULFILLMENT_METHODS[0]]: "Collect your laundry at the shop",
+  [FULFILLMENT_METHODS[1]]: "We collect and return it to you",
+};
+
 export const LOAD_TYPE_LABELS: Record<LoadType, string> = {
   Small: "Small Load (1–3 kg)",
   Medium: "Medium Load (4–6 kg)",

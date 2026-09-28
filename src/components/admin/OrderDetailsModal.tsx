@@ -16,7 +16,16 @@ import {
   formatPrice,
   formatTime,
 } from "@/lib/format";
-import { LOAD_TYPE_LABELS, PAYMENT_METHODS, type LoadType } from "@/lib/constants";
+import {
+  FULFILLMENT_METHOD_LABELS,
+  FULFILLMENT_METHODS,
+  LOAD_TYPE_LABELS,
+  PAYMENT_METHOD_LABELS,
+  PAYMENT_METHODS,
+  type FulfillmentMethod,
+  type LoadType,
+  type PaymentMethod,
+} from "@/lib/constants";
 import StatusBadge, { PaymentBadge } from "@/components/admin/StatusBadge";
 
 interface Feedback {
@@ -50,6 +59,21 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function loadTypeLabel(value: string): string {
   return LOAD_TYPE_LABELS[value as LoadType] ?? value;
+}
+
+function fulfillmentLabel(value: string): string {
+  return FULFILLMENT_METHOD_LABELS[value as FulfillmentMethod] ?? value;
+}
+
+function isDelivery(value: string): boolean {
+  return value === FULFILLMENT_METHODS[1];
+}
+
+function formatBalance(total: string, paid: string): string {
+  const balance = Number(total) - Number(paid);
+  if (!Number.isFinite(balance)) return "—";
+  if (balance <= 0) return "Settled";
+  return formatPrice(balance);
 }
 
 const DECISION_STATUSES = new Set(["Accepted", "Rejected"]);
@@ -127,7 +151,12 @@ export default function OrderDetailsModal({
         }
         const fetched = json.order as AdminOrderDetail;
         setOrder(fetched);
-        setPayMethod(fetched.payment_method ?? "Cash");
+        setPayMethod(
+          fetched.payment_method ??
+            (PAYMENT_METHODS.includes(fetched.requested_payment_method as PaymentMethod)
+              ? fetched.requested_payment_method
+              : "Cash")
+        );
         setPayStatus(fetched.payment_status ?? "Pending");
         setPayAmount(String(fetched.total_amount ?? ""));
         setError(false);
@@ -246,6 +275,9 @@ export default function OrderDetailsModal({
   const inputClasses =
     "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10";
 
+  const isClosed =
+    order !== null && (order.order_status === "Rejected" || order.order_status === "Cancelled");
+
   const latestPayment =
     order && order.payments.length > 0 ? order.payments[order.payments.length - 1] : null;
 
@@ -329,27 +361,44 @@ export default function OrderDetailsModal({
                 <Row label="Address">{order.customer_address || "—"}</Row>
               </Section>
 
-              <Section title="Laundry Information">
+              <Section title="Laundry Details">
                 <Row label="Service">{order.service_name}</Row>
                 <Row label="Load Type">{loadTypeLabel(order.load_type)}</Row>
-                <Row label="Method">{order.fulfillment_method}</Row>
-                <Row label="Special Instructions">{order.special_instructions || "—"}</Row>
-                <Row label="Total Amount">{formatPrice(order.total_amount)}</Row>
+                <Row label="Special Instructions">
+                  {order.special_instructions || "None provided"}
+                </Row>
               </Section>
 
-              <Section title="Pickup Information">
+              <Section title={"Pickup & Payment"}>
+                <Row label="Method">
+                  <span className="block">{order.fulfillment_method}</span>
+                  <span className="mt-0.5 block text-xs font-medium text-slate-500">
+                    {fulfillmentLabel(order.fulfillment_method)}
+                  </span>
+                </Row>
                 <Row label="Pickup Date">{formatDate(order.pickup_date)}</Row>
                 <Row label="Pickup Time">{formatTime(order.pickup_time)}</Row>
+                {isDelivery(order.fulfillment_method) ? (
+                  <Row label="Deliver To">{order.customer_address || "—"}</Row>
+                ) : null}
+                <Row label="Customer&apos;s Choice">
+                  <span className="block">{order.requested_payment_method}</span>
+                  <span className="mt-0.5 block text-xs font-medium text-slate-500">
+                    {PAYMENT_METHOD_LABELS[order.requested_payment_method as PaymentMethod] ?? ""}
+                  </span>
+                </Row>
               </Section>
 
-              <Section title="Payment Information">
-                <Row label="Customer&apos;s Choice">{order.requested_payment_method}</Row>
+              <Section title="Payment Record">
+                <Row label="Order Total">{formatPrice(order.total_amount)}</Row>
+                <Row label="Amount Paid">{formatPrice(order.total_paid)}</Row>
+                <Row label="Balance">{formatBalance(order.total_amount, order.total_paid)}</Row>
                 <Row label="Payment Status">
                   <PaymentBadge status={order.payment_status} />
                 </Row>
-                <Row label="Payment Method">{order.payment_method ?? "—"}</Row>
-                <Row label="Amount Paid">{formatPrice(order.total_paid)}</Row>
-                <Row label="Order Total">{formatPrice(order.total_amount)}</Row>
+                <Row label="Recorded Method">
+                  {order.payment_method ?? "Not recorded"}
+                </Row>
                 <Row label="Payment Date">
                   {latestPayment?.payment_date
                     ? formatDateTime(latestPayment.payment_date)
@@ -359,8 +408,11 @@ export default function OrderDetailsModal({
 
               <Section title="Order Information">
                 <Row label="Order Reference">{order.order_reference}</Row>
+                <Row label="Tracking ID">
+                  <span className="font-mono">{order.tracking_token}</span>
+                </Row>
                 <Row label="Current Status">{order.order_status}</Row>
-                <Row label="Created Date">{formatDateTime(order.created_at)}</Row>
+                <Row label="Booked On">{formatDateTime(order.created_at)}</Row>
               </Section>
 
               <Section title="Status History">
@@ -570,84 +622,96 @@ export default function OrderDetailsModal({
                 </Section>
               ) : null}
 
-              <Section title="Record Payment">
-                <div className="py-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <label
-                        htmlFor={`pay-method-${orderId}`}
-                        className="mb-2 block text-sm font-semibold text-slate-700"
-                      >
-                        Payment Method
-                      </label>
-                      <select
-                        id={`pay-method-${orderId}`}
-                        value={payMethod}
-                        onChange={(event) => setPayMethod(event.target.value)}
-                        className={selectClasses}
-                      >
-                        {PAYMENT_METHODS.map((value) => (
-                          <option key={value} value={value}>
-                            {value}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`pay-status-${orderId}`}
-                        className="mb-2 block text-sm font-semibold text-slate-700"
-                      >
-                        Payment Status
-                      </label>
-                      <select
-                        id={`pay-status-${orderId}`}
-                        value={payStatus}
-                        onChange={(event) => setPayStatus(event.target.value)}
-                        className={selectClasses}
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Paid">Paid</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`pay-amount-${orderId}`}
-                        className="mb-2 block text-sm font-semibold text-slate-700"
-                      >
-                        Amount
-                      </label>
-                      <input
-                        id={`pay-amount-${orderId}`}
-                        type="number"
-                        min="0"
-                        max="999999.99"
-                        maxLength={9}
-                        step="0.01"
-                        value={payAmount}
-                        onChange={(event) => setPayAmount(event.target.value)}
-                        className={inputClasses}
-                      />
-                    </div>
+              {isClosed ? (
+                <Section title="Record Payment">
+                  <div className="py-4 text-sm font-medium text-slate-500">
+                    This order is {order.order_status.toLowerCase()}, so payments can no longer
+                    be recorded.
                   </div>
-
-                  <button
-                    type="button"
-                    disabled={paying}
-                    onClick={handlePaymentUpdate}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                  >
-                    {paying ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save Payment"
-                    )}
-                  </button>
-                </div>
-              </Section>
+                </Section>
+              ) : (
+                <Section title="Record Payment">
+                  <div className="py-4">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <label
+                          htmlFor={`pay-method-${orderId}`}
+                          className="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                          Payment Method
+                        </label>
+                        <select
+                          id={`pay-method-${orderId}`}
+                          value={payMethod}
+                          onChange={(event) => setPayMethod(event.target.value)}
+                          className={selectClasses}
+                        >
+                          {PAYMENT_METHODS.map((value) => (
+                            <option key={value} value={value}>
+                              {value}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-1.5 text-xs font-medium text-slate-500">
+                          Customer chose {order.requested_payment_method} when booking.
+                        </p>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`pay-status-${orderId}`}
+                          className="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                          Payment Status
+                        </label>
+                        <select
+                          id={`pay-status-${orderId}`}
+                          value={payStatus}
+                          onChange={(event) => setPayStatus(event.target.value)}
+                          className={selectClasses}
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Paid">Paid</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`pay-amount-${orderId}`}
+                          className="mb-2 block text-sm font-semibold text-slate-700"
+                        >
+                          Amount
+                        </label>
+                        <input
+                          id={`pay-amount-${orderId}`}
+                          type="number"
+                          min="0"
+                          max="999999.99"
+                          maxLength={9}
+                          step="0.01"
+                          value={payAmount}
+                          onChange={(event) => setPayAmount(event.target.value)}
+                          className={inputClasses}
+                        />
+                      </div>
+                    </div>
+  
+                    <button
+                      type="button"
+                      disabled={paying}
+                      onClick={handlePaymentUpdate}
+                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    >
+                      {paying ? (
+                        <>
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Payment"
+                      )}
+                    </button>
+                  </div>
+                </Section>
+              )}
             </div>
           )}
         </div>

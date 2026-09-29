@@ -151,7 +151,7 @@ export default function OrdersManager({
             className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10"
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-2 items-end gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
           <div className="relative">
             <select
               value={status}
@@ -160,7 +160,7 @@ export default function OrdersManager({
                 setError(false);
                 setLoading(true);
               }}
-              className={`${selectClasses} pr-9`}
+              className={`${selectClasses} w-full pr-9 sm:w-auto`}
               aria-label="Filter by status"
             >
               <option value="all">All Statuses</option>
@@ -179,7 +179,7 @@ export default function OrdersManager({
                 setError(false);
                 setLoading(true);
               }}
-              className={`${selectClasses} pr-9`}
+              className={`${selectClasses} w-full pr-9 sm:w-auto`}
               aria-label="Filter by date"
             >
               {DATE_FILTER_OPTIONS.map((option) => (
@@ -197,7 +197,7 @@ export default function OrdersManager({
                 setError(false);
                 setLoading(true);
               }}
-              className={`${selectClasses} pr-9`}
+              className={`${selectClasses} w-full pr-9 sm:w-auto`}
               aria-label="Filter by payment status"
             >
               {PAYMENT_FILTER_OPTIONS.map((option) => (
@@ -207,7 +207,7 @@ export default function OrdersManager({
               ))}
             </select>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="col-span-2 flex items-center gap-2 sm:col-span-1">
             <input
               type="date"
               value={from}
@@ -216,10 +216,10 @@ export default function OrdersManager({
                 setError(false);
                 setLoading(true);
               }}
-              className={`${selectClasses} w-auto`}
+              className={`${selectClasses} min-w-0 flex-1`}
               aria-label="Pickup date from"
             />
-            <span className="text-xs font-semibold text-slate-400">to</span>
+            <span className="shrink-0 text-xs font-semibold text-slate-400">to</span>
             <input
               type="date"
               value={to}
@@ -228,7 +228,7 @@ export default function OrdersManager({
                 setError(false);
                 setLoading(true);
               }}
-              className={`${selectClasses} w-auto`}
+              className={`${selectClasses} min-w-0 flex-1`}
               aria-label="Pickup date to"
             />
           </div>
@@ -307,7 +307,7 @@ export default function OrdersManager({
               {orders.length === 1 ? "order" : "orders"}
             </p>
           </div>
-          <div className="max-h-[70vh] overflow-auto">
+          <div className="hidden max-h-[70vh] overflow-auto md:block">
             <table className="w-full min-w-[1040px] text-left">
               <thead>
                 <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -377,6 +377,80 @@ export default function OrdersManager({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="space-y-3 p-4 md:hidden">
+            {orders.map((order) => (
+              <div
+                key={order.order_id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedOrderId(order.order_id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedOrderId(order.order_id);
+                  }
+                }}
+                className="cursor-pointer rounded-2xl border border-slate-100 bg-white p-4 text-left transition-colors hover:border-brand-200 hover:bg-brand-50/40"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-[13px] font-semibold text-brand-600">
+                      {order.order_reference}
+                    </p>
+                    <p className="mt-0.5 truncate font-semibold text-slate-800">
+                      {order.customer_name}
+                    </p>
+                    <p className="text-xs text-slate-500">{order.customer_phone}</p>
+                  </div>
+                  <StatusBadge status={order.order_status} />
+                </div>
+
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                  <div className="min-w-0">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Service
+                    </dt>
+                    <dd className="truncate text-slate-600">{order.service_name}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Pickup
+                    </dt>
+                    <dd className="text-slate-600">
+                      {formatDateShort(order.pickup_date)}
+                      <span className="text-slate-400"> · </span>
+                      {formatTime(order.pickup_time)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Payment
+                    </dt>
+                    <dd className="text-slate-600">
+                      {order.payment_method ? `${order.payment_method} · ` : ""}
+                      {order.payment_status}
+                    </dd>
+                  </div>
+                  <div className="text-right">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Total
+                    </dt>
+                    <dd className="font-bold text-slate-900">
+                      {formatPrice(order.total_amount)}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-3 flex items-center justify-end border-t border-slate-100 pt-3">
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
+                    <Eye className="h-3.5 w-3.5" />
+                    View details
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

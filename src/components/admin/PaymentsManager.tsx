@@ -332,7 +332,7 @@ export default function PaymentsManager() {
               {payments.length === 1 ? "payment" : "payments"}
             </p>
           </div>
-          <div className="max-h-[70vh] overflow-auto">
+          <div className="hidden max-h-[70vh] overflow-auto md:block">
             <table className="w-full min-w-[940px] text-left">
               <thead>
                 <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -405,6 +405,83 @@ export default function PaymentsManager() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="space-y-3 p-4 md:hidden">
+            {payments.map((payment) => (
+              <div
+                key={payment.payment_id}
+                className="rounded-2xl border border-slate-100 bg-white p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-[13px] font-semibold text-brand-600">
+                      PY-{String(payment.payment_id).padStart(4, "0")}
+                    </p>
+                    <p className="mt-0.5 truncate font-semibold text-slate-800">
+                      {payment.customer_name}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderId(payment.order_id)}
+                      className="mt-0.5 font-mono text-xs font-semibold text-brand-600 transition-colors hover:text-brand-700"
+                    >
+                      {payment.order_reference}
+                    </button>
+                  </div>
+                  <PaymentBadge status={payment.payment_status} />
+                </div>
+
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                  <div className="min-w-0">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Method
+                    </dt>
+                    <dd className="truncate text-slate-600">{payment.payment_method}</dd>
+                  </div>
+                  <div className="text-right">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Amount
+                    </dt>
+                    <dd className="font-bold text-slate-900">{formatPrice(payment.amount)}</dd>
+                  </div>
+                  <div className="col-span-2 min-w-0">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Payment Date
+                    </dt>
+                    <dd className="text-slate-600">
+                      {payment.payment_date ? formatDateTime(payment.payment_date) : "—"}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderId(payment.order_id)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 transition-colors hover:bg-brand-100"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    View order
+                  </button>
+                  {payment.payment_status === "Pending" ? (
+                    <button
+                      type="button"
+                      disabled={payingId === payment.payment_id}
+                      onClick={() => markPaid(payment.payment_id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {payingId === payment.payment_id ? (
+                        <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5" />
+                      )}
+                      Mark Paid
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -357,7 +357,8 @@ function RecentOrders({ orders }: { orders: AdminOrderRow[] }) {
       {orders.length === 0 ? (
         <div className={emptyStateClasses}>No orders yet.</div>
       ) : (
-        <div className="mt-5 max-h-80 overflow-auto">
+        <>
+          <div className="mt-5 hidden max-h-80 overflow-auto md:block">
           <table className="w-full min-w-[640px] text-left">
             <thead>
               <tr className="border-b border-slate-100">
@@ -401,6 +402,38 @@ function RecentOrders({ orders }: { orders: AdminOrderRow[] }) {
             </tbody>
           </table>
         </div>
+
+        <div className="mt-5 space-y-3 md:hidden">
+          {orders.map((order) => (
+            <Link
+              key={order.order_id}
+              href={`/admin/orders?order=${order.order_id}`}
+              className="block rounded-2xl border border-slate-100 p-4 transition-colors hover:border-brand-200"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-mono text-[13px] font-semibold text-brand-600">
+                    {order.order_reference}
+                  </p>
+                  <p className="mt-0.5 truncate font-medium text-slate-800">
+                    {order.customer_name}
+                  </p>
+                </div>
+                <StatusBadge status={order.order_status} />
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-sm">
+                <span className="truncate text-slate-500">{order.service_name}</span>
+                <span className="shrink-0 font-bold text-slate-900">
+                  {formatPrice(order.total_amount)}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">
+                Pickup {formatDateShort(order.pickup_date)}
+              </p>
+            </Link>
+          ))}
+        </div>
+        </>
       )}
     </div>
   );
@@ -417,8 +450,9 @@ function TodayPickups({ orders }: { orders: AdminOrderRow[] }) {
       {orders.length === 0 ? (
         <div className={emptyStateClasses}>No pickups scheduled for today.</div>
       ) : (
-        <div className="mt-5 max-h-72 overflow-auto">
-          <table className="w-full min-w-[560px] text-left">
+        <>
+          <div className="mt-5 hidden max-h-72 overflow-auto md:block">
+            <table className="w-full min-w-[560px] text-left">
             <thead>
               <tr className="border-b border-slate-100">
                 <th className={`${tableHeadClasses} pr-4`}>Order Reference</th>
@@ -447,6 +481,30 @@ function TodayPickups({ orders }: { orders: AdminOrderRow[] }) {
             </tbody>
           </table>
         </div>
+
+        <div className="mt-5 space-y-3 md:hidden">
+          {orders.map((order) => (
+            <div
+              key={order.order_id}
+              className="flex items-center gap-4 rounded-2xl border border-slate-100 p-4"
+            >
+              <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
+                <span className="text-sm font-extrabold leading-none">
+                  {formatTime(order.pickup_time)}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-[13px] font-semibold text-brand-600">
+                  {order.order_reference}
+                </p>
+                <p className="truncate font-medium text-slate-800">{order.customer_name}</p>
+                <p className="truncate text-xs text-slate-500">{order.service_name}</p>
+              </div>
+              <StatusBadge status={order.order_status} />
+            </div>
+          ))}
+        </div>
+        </>
       )}
     </div>
   );

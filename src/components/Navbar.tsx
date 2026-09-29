@@ -15,7 +15,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-900/5 bg-white/90 backdrop-blur">
-      <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
+      <nav className="mx-auto grid h-[72px] max-w-7xl grid-cols-2 items-center px-5 sm:px-8 lg:grid-cols-3">
         <Link href="/" className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-white shadow-sm">
             <WashingMachine className="h-5 w-5" strokeWidth={2.2} />
@@ -35,15 +35,6 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-        </div>
-
-        <div className="hidden items-center gap-7 lg:flex">
-          <Link
-            href="/admin/login"
-            className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700"
-          >
-            Admin Login
-          </Link>
         </div>
 
         <button
@@ -76,15 +67,6 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-          </div>
-          <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4">
-            <Link
-              href="/admin/login"
-              onClick={() => setOpen(false)}
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
-            >
-              Admin Login
-            </Link>
           </div>
         </div>
       ) : null}

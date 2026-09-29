@@ -78,7 +78,12 @@ function formatBalance(total: string, paid: string): string {
 
 const DECISION_STATUSES = new Set(["Accepted", "Rejected"]);
 
-const ACTIONABLE_STATUSES = new Set(["Accepted", "In Progress", "Ready for Pickup"]);
+const ACTIONABLE_STATUSES = new Set([
+  "Accepted",
+  "In Progress",
+  "Ready for Pickup",
+  "Ready for Delivery",
+]);
 
 function QuickAction({
   label,
@@ -277,6 +282,11 @@ export default function OrderDetailsModal({
 
   const isClosed =
     order !== null && (order.order_status === "Rejected" || order.order_status === "Cancelled");
+
+  const deliveryOrder = isDelivery(order?.fulfillment_method ?? "Pickup");
+  const readyStatus = deliveryOrder ? "Ready for Delivery" : "Ready for Pickup";
+  const terminalStatus = deliveryOrder ? "Delivered" : "Completed";
+  const terminalLabel = deliveryOrder ? "Mark Delivered" : "Mark Completed";
 
   const latestPayment =
     order && order.payments.length > 0 ? order.payments[order.payments.length - 1] : null;
@@ -558,25 +568,25 @@ export default function OrderDetailsModal({
                           tone="primary"
                           disabled={updating}
                           icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                          label="Ready for Pickup"
-                          onClick={() => handleStatusUpdate("Ready for Pickup")}
+                          label={deliveryOrder ? "Ready for Delivery" : "Ready for Pickup"}
+                          onClick={() => handleStatusUpdate(readyStatus)}
                         />
                       ) : null}
-                      {order.order_status !== "Ready for Pickup" ? (
+                      {order.order_status !== readyStatus ? (
                         <QuickAction
                           tone="secondary"
                           disabled={updating}
                           icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                          label="Mark Ready for Pickup"
-                          onClick={() => handleStatusUpdate("Ready for Pickup")}
+                          label={deliveryOrder ? "Mark Ready for Delivery" : "Mark Ready for Pickup"}
+                          onClick={() => handleStatusUpdate(readyStatus)}
                         />
                       ) : null}
                       <QuickAction
-                        tone={order.order_status === "Ready for Pickup" ? "primary" : "secondary"}
+                        tone={order.order_status === readyStatus ? "primary" : "secondary"}
                         disabled={updating}
                         icon={updating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                        label="Mark Completed"
-                        onClick={() => handleStatusUpdate("Completed")}
+                        label={terminalLabel}
+                        onClick={() => handleStatusUpdate(terminalStatus)}
                       />
                     </div>
 

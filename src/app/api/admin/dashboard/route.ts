@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
-import { LAUNDRY_STATUSES } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -54,15 +53,17 @@ export async function GET() {
       countByStatus[row.status] = Number(row.c);
     }
 
-    const statusCounts = LAUNDRY_STATUSES.map((status) => ({
+    const dashboardStatuses = ["Pending", "Accepted", "Completed", "Delivered"];
+    const statusCounts = dashboardStatuses.map((status) => ({
       status,
       count: countByStatus[status] ?? 0,
     }));
 
     const pending = countByStatus["Pending"] ?? 0;
     const active = ACTIVE_STATUSES.reduce((sum, s) => sum + (countByStatus[s] ?? 0), 0);
-    const readyForPickup = countByStatus["Ready for Pickup"] ?? 0;
-    const completed = countByStatus["Completed"] ?? 0;
+    const readyForPickup =
+      (countByStatus["Ready for Pickup"] ?? 0) + (countByStatus["Ready for Delivery"] ?? 0);
+    const completed = (countByStatus["Completed"] ?? 0) + (countByStatus["Delivered"] ?? 0);
     const cancelled = countByStatus["Cancelled"] ?? 0;
 
     const [todayRows] = await pool.query<RowDataPacket[]>(

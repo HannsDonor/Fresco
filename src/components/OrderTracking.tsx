@@ -10,17 +10,71 @@ import {
   WashingMachine,
   AlertTriangle,
 } from "lucide-react";
-import { TRACKING_TOKEN_STORAGE_KEY } from "@/lib/constants";
+import { TRACKING_TOKEN_STORAGE_KEY, FULFILLMENT_METHODS } from "@/lib/constants";
 
 const REFRESH_INTERVAL_MS = 30_000;
 
-const STATUS_SEQUENCE = [
-  "Pending",
-  "Accepted",
-  "In Progress",
-  "Ready for Pickup",
-  "Completed",
-] as const;
+interface TimelineStep {
+  status: string;
+  label: string;
+  description: string;
+}
+
+const PICKUP_TIMELINE: TimelineStep[] = [
+  {
+    status: "Pending",
+    label: "Request Received",
+    description: "Your booking was received. FRESCO will review it shortly.",
+  },
+  {
+    status: "Accepted",
+    label: "Order Confirmed",
+    description: "Order confirmed! Bring your laundry to the shop on your pickup date.",
+  },
+  {
+    status: "In Progress",
+    label: "Cleaning in Progress",
+    description: "Your laundry is being washed, dried, and folded.",
+  },
+  {
+    status: "Ready for Pickup",
+    label: "Ready for Pickup",
+    description: "Ready! Collect your laundry at the shop during opening hours.",
+  },
+  {
+    status: "Completed",
+    label: "Completed",
+    description: "You've collected your laundry. Thank you!",
+  },
+];
+
+const DELIVERY_TIMELINE: TimelineStep[] = [
+  {
+    status: "Pending",
+    label: "Request Received",
+    description: "Your booking was received. FRESCO will review it shortly.",
+  },
+  {
+    status: "Accepted",
+    label: "Order Confirmed",
+    description: "Order confirmed! Our rider will collect your laundry on your pickup date.",
+  },
+  {
+    status: "In Progress",
+    label: "Cleaning in Progress",
+    description: "Your laundry is being washed, dried, and folded.",
+  },
+  {
+    status: "Ready for Delivery",
+    label: "Ready for Delivery",
+    description: "Your laundry is ready and will be delivered back to you.",
+  },
+  {
+    status: "Delivered",
+    label: "Delivered",
+    description: "Your laundry has been delivered. Thank you!",
+  },
+];
 
 interface TimelineEntry {
   status_id: number;
@@ -129,8 +183,14 @@ export default function OrderTracking({ token }: { token: string }) {
     return () => window.clearInterval(interval);
   }, [token]);
 
+  const isDelivery = order?.fulfillment_method === FULFILLMENT_METHODS[1];
+  const timelineSteps: TimelineStep[] = order
+    ? isDelivery
+      ? DELIVERY_TIMELINE
+      : PICKUP_TIMELINE
+    : [];
   const currentIndex = order
-    ? STATUS_SEQUENCE.findIndex((status) => status === order.order_status)
+    ? timelineSteps.findIndex((step) => step.status === order.order_status)
     : -1;
   const isCancelled = order?.order_status === "Cancelled";
   const isDeclined = order?.order_status === "Rejected";
@@ -205,7 +265,7 @@ export default function OrderTracking({ token }: { token: string }) {
                         ? "bg-red-100 text-red-600"
                         : isDeclined
                           ? "bg-rose-100 text-rose-600"
-                          : currentIndex >= STATUS_SEQUENCE.length - 1
+                          : currentIndex >= timelineSteps.length - 1
                             ? "bg-emerald-100 text-emerald-700"
                             : "bg-brand-100 text-brand-700"
                     }`}
@@ -250,12 +310,12 @@ export default function OrderTracking({ token }: { token: string }) {
                 ) : null}
 
                 <ol className="mt-6 space-y-1">
-                  {STATUS_SEQUENCE.map((status, index) => {
+                  {timelineSteps.map((step, index) => {
                     const done = currentIndex >= index;
                     const active = currentIndex === index;
                     return (
-                      <li key={status} className="relative flex gap-4 pb-6 last:pb-0">
-                        {index < STATUS_SEQUENCE.length - 1 ? (
+                      <li key={step.status} className="relative flex gap-4 pb-6 last:pb-0">
+                        {index < timelineSteps.length - 1 ? (
                           <span
                             aria-hidden="true"
                             className={`absolute left-[13px] top-7 h-full w-0.5 ${
@@ -280,15 +340,15 @@ export default function OrderTracking({ token }: { token: string }) {
                               active ? "text-brand-700" : done ? "text-slate-800" : "text-slate-400"
                             }`}
                           >
-                            {status === "Ready for Pickup" ? "Ready for Pickup" : status}
+                            {step.label}
                             {active ? (
                               <span className="ml-2 inline-block h-2 w-2 animate-pulse rounded-full bg-brand-500 align-middle" />
                             ) : null}
                           </span>
                           <span className="mt-0.5 block text-xs text-slate-400">
-                            {order.timeline.find((entry) => entry.status === status)?.note ??
+                            {order.timeline.find((entry) => entry.status === step.status)?.note ??
                               (done
-                                ? `Status updated to ${status}.`
+                                ? step.description
                                 : "")}
                           </span>
                         </span>

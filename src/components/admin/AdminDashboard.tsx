@@ -30,7 +30,7 @@ const KPI_CARDS: KpiCard[] = [
   { key: "total", label: "Total Orders", icon: ClipboardList, iconClasses: "bg-brand-500 text-white" },
   { key: "pending", label: "Pending Orders", icon: Clock, iconClasses: "bg-amber-100 text-amber-600" },
   { key: "active", label: "Active Orders", icon: LoaderCircle, iconClasses: "bg-sky-100 text-sky-600" },
-  { key: "readyForPickup", label: "Ready for Pickup", icon: ShoppingBag, iconClasses: "bg-indigo-100 text-indigo-600" },
+  { key: "readyForPickup", label: "Ready Orders", icon: ShoppingBag, iconClasses: "bg-indigo-100 text-indigo-600" },
   { key: "completed", label: "Completed Orders", icon: CheckCircle2, iconClasses: "bg-emerald-100 text-emerald-600" },
   { key: "todayOrders", label: "Today's Orders", icon: CalendarDays, iconClasses: "bg-brand-100 text-brand-600" },
 ];

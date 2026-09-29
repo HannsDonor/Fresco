@@ -3,7 +3,9 @@ export const LAUNDRY_STATUSES = [
   "Accepted",
   "In Progress",
   "Ready for Pickup",
+  "Ready for Delivery",
   "Completed",
+  "Delivered",
   "Cancelled",
   "Rejected",
 ] as const;

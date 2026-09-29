@@ -84,7 +84,7 @@ CREATE TABLE `laundry_orders` (
   `special_instructions` text DEFAULT NULL,
   `pickup_date` date NOT NULL,
   `pickup_time` time NOT NULL,
-  `order_status` enum('Pending','Accepted','In Progress','Ready for Pickup','Completed','Cancelled','Rejected') NOT NULL DEFAULT 'Pending',
+  `order_status` enum('Pending','Accepted','In Progress','Ready for Pickup','Ready for Delivery','Completed','Delivered','Cancelled','Rejected') NOT NULL DEFAULT 'Pending',
   `total_amount` decimal(10,2) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()

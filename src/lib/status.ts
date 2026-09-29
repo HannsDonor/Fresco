@@ -12,9 +12,11 @@ export const STATUS_SEQUENCE: Record<LaundryStatus, number> = {
   Accepted: 1,
   "In Progress": 2,
   "Ready for Pickup": 3,
-  Completed: 4,
-  Cancelled: 5,
-  Rejected: 6,
+  "Ready for Delivery": 4,
+  Completed: 5,
+  Delivered: 6,
+  Cancelled: 7,
+  Rejected: 8,
 };
 
 export const STATUS_COLORS: Record<LaundryStatus, StatusColor> = {
@@ -42,11 +44,23 @@ export const STATUS_COLORS: Record<LaundryStatus, StatusColor> = {
     badge: "bg-indigo-100 text-indigo-700",
     hex: "#6366f1",
   },
+  "Ready for Delivery": {
+    dot: "bg-violet-500",
+    bar: "bg-violet-500",
+    badge: "bg-violet-100 text-violet-700",
+    hex: "#8b5cf6",
+  },
   Completed: {
     dot: "bg-emerald-500",
     bar: "bg-emerald-500",
     badge: "bg-emerald-100 text-emerald-700",
     hex: "#10b981",
+  },
+  Delivered: {
+    dot: "bg-teal-500",
+    bar: "bg-teal-500",
+    badge: "bg-teal-100 text-teal-700",
+    hex: "#14b8a6",
   },
   Cancelled: {
     dot: "bg-red-500",

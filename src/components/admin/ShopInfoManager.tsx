@@ -78,7 +78,6 @@ export default function ShopInfoManager() {
   const [error, setError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [shopName, setShopName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
@@ -108,7 +107,6 @@ export default function ShopInfoManager() {
         }
         const data = json.data as AdminShopInfo;
         setInfo(data);
-        setShopName(data.shop_name);
         setPhone(data.phone ?? "");
         setEmail(data.email ?? "");
         setAddress(data.address ?? "");
@@ -253,11 +251,6 @@ export default function ShopInfoManager() {
   }
 
   async function handleSave() {
-    if (!shopName.trim()) {
-      setBanner({ type: "error", text: "Shop name is required." });
-      return;
-    }
-
     const digits = gcashNumber.replace(/\D/g, "");
     if (digits && !/^09\d{9}$/.test(digits)) {
       setBanner({
@@ -271,7 +264,6 @@ export default function ShopInfoManager() {
     setBanner(null);
     try {
       const payload: Record<string, unknown> = {
-        shop_name: shopName.trim(),
         phone: phone.trim() || null,
         email: email.trim() || null,
         address: address.trim() || null,
@@ -401,22 +393,6 @@ export default function ShopInfoManager() {
               <h2 className="text-base font-bold text-slate-900">Contact Information</h2>
             </div>
             <div className="space-y-5 px-6 py-5">
-              <div>
-                <label htmlFor="shop-name" className="mb-2 block text-sm font-semibold text-slate-700">
-                  Shop Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="shop-name"
-                  type="text"
-                  value={shopName}
-                  maxLength={150}
-                  onChange={(event) => {
-                    setShopName(event.target.value);
-                    markDirty();
-                  }}
-                  className={inputClasses}
-                />
-              </div>
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="shop-phone" className="mb-2 block text-sm font-semibold text-slate-700">

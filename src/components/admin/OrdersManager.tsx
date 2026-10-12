@@ -68,6 +68,7 @@ export default function OrdersManager({
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedOrderId, setSelectedOrderId] = useState<number | undefined>(initialOrderId);
   const skipFirstDebounce = useRef(true);
+  const dateRangeInvalid = Boolean(from && to && from > to);
 
   useEffect(() => {
     if (skipFirstDebounce.current) {
@@ -88,6 +89,12 @@ export default function OrdersManager({
     let cancelled = false;
 
     async function fetchOrders() {
+      if (dateRangeInvalid) {
+        setLoading(false);
+        setError(false);
+        return;
+      }
+
       try {
         const params = new URLSearchParams();
         if (q) params.set("q", q);
@@ -121,7 +128,7 @@ export default function OrdersManager({
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [q, status, date, payment, from, to, reloadKey]);
+  }, [q, status, date, payment, from, to, dateRangeInvalid, reloadKey]);
 
   const handleUpdated = useCallback(() => {
     setReloadKey((key) => key + 1);
@@ -211,6 +218,7 @@ export default function OrdersManager({
             <input
               type="date"
               value={from}
+              max={to || undefined}
               onChange={(event) => {
                 setFrom(event.target.value);
                 setError(false);
@@ -223,6 +231,7 @@ export default function OrdersManager({
             <input
               type="date"
               value={to}
+              min={from || undefined}
               onChange={(event) => {
                 setTo(event.target.value);
                 setError(false);
@@ -235,7 +244,14 @@ export default function OrdersManager({
         </div>
       </div>
 
-      {loading ? (
+      {dateRangeInvalid ? (
+        <div
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+          role="alert"
+        >
+          The starting date must be on or before the ending date.
+        </div>
+      ) : loading ? (
         <div className="rounded-2xl bg-white p-6 ring-1 ring-brand-100">
           <div className="space-y-3">
             {Array.from({ length: 6 }).map((_, index) => (

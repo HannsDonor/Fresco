@@ -44,6 +44,14 @@ export async function GET(request: Request) {
     const payment = (url.searchParams.get("payment") ?? "").trim();
     const from = (url.searchParams.get("from") ?? "").trim();
     const to = (url.searchParams.get("to") ?? "").trim();
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (datePattern.test(from) && datePattern.test(to) && from > to) {
+      return NextResponse.json(
+        { success: false, error: "The starting date must be on or before the ending date." },
+        { status: 400 }
+      );
+    }
 
     const conditions: string[] = [];
     const params: string[] = [];
@@ -69,11 +77,11 @@ export async function GET(request: Request) {
       params.push(todayString());
     }
 
-    if (/^\d{4}-\d{2}-\d{2}$/.test(from)) {
+    if (datePattern.test(from)) {
       conditions.push("o.pickup_date >= ?");
       params.push(from);
     }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+    if (datePattern.test(to)) {
       conditions.push("o.pickup_date <= ?");
       params.push(to);
     }

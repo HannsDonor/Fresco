@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ClipboardList,
-  Home,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -122,13 +121,6 @@ export default function AdminShell({
               Log out
             </button>
           </div>
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-[15px] font-semibold text-slate-500 transition-colors hover:bg-brand-50 hover:text-brand-700"
-          >
-            <Home className="h-5 w-5" strokeWidth={2.1} />
-            Back to Home
-          </Link>
         </div>
       </aside>
 

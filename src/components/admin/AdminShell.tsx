@@ -9,6 +9,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  SlidersHorizontal,
   Shirt,
   Store,
   Wallet,
@@ -30,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/payments", label: "Payments", icon: Wallet, exact: false },
   { href: "/admin/services", label: "Services", icon: Shirt, exact: false },
   { href: "/admin/shop-information", label: "Shop Info", icon: Store, exact: false },
+  { href: "/admin/shop-settings", label: "Shop Settings", icon: SlidersHorizontal, exact: false },
   { href: "/admin/profile", label: "Profile", icon: Settings, exact: false },
 ];
 

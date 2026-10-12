@@ -28,7 +28,7 @@ export const FULFILLMENT_METHOD_LABELS: Record<FulfillmentMethod, string> = {
 export const LOAD_TYPE_LABELS: Record<LoadType, string> = {
   Small: "Small Load (1–3 kg)",
   Medium: "Medium Load (4–6 kg)",
-  Large: "Large Load (7+ kg)",
+  Large: "Large Load (7 kg)",
 };
 
 export const PAYMENT_METHODS = ["Cash", "GCash"] as const;

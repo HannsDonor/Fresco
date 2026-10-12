@@ -192,7 +192,7 @@ export async function PATCH(
            ), 0) AS used_kg
            FROM laundry_orders o
            WHERE o.pickup_date = ?
-             AND o.order_status IN ('Accepted', 'In Progress', 'Ready for Pickup', 'Ready for Delivery')`,
+             AND o.order_status IN ('Accepted', 'In Progress')`,
           [
             capacity.small_load_kg,
             capacity.medium_load_kg,

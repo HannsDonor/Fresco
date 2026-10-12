@@ -96,7 +96,7 @@ export async function GET() {
        ), 0) AS used_kg
        FROM laundry_orders o
        WHERE o.pickup_date = ?
-         AND o.order_status IN ('Accepted', 'In Progress', 'Ready for Pickup', 'Ready for Delivery')`,
+         AND o.order_status IN ('Accepted', 'In Progress')`,
       [
         capacitySettings.small_load_kg,
         capacitySettings.medium_load_kg,

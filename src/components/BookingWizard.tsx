@@ -109,8 +109,12 @@ const phoneInputClasses =
   "w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-[5.25rem] pr-4 text-[15px] text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10";
 
 const BOOKING_FORM_STORAGE_KEY = "frescoBookingForm";
+const BOOKING_STEP_STORAGE_KEY = "frescoBookingStep";
 
 const SAVED_FORM_FIELDS = [
+  "name",
+  "phone",
+  "address",
   "serviceId",
   "loadType",
   "instructions",
@@ -121,30 +125,6 @@ const SAVED_FORM_FIELDS = [
 ] as const satisfies readonly (keyof BookingForm)[];
 
 type SavedBookingForm = Partial<Pick<BookingForm, (typeof SAVED_FORM_FIELDS)[number]>>;
-
-function loadSavedForm(initial: BookingForm): BookingForm {
-  if (typeof window === "undefined") return initial;
-  try {
-    const raw = window.localStorage.getItem(BOOKING_FORM_STORAGE_KEY);
-    if (!raw) return initial;
-    const saved = JSON.parse(raw) as SavedBookingForm;
-    const merged: BookingForm = { ...initial };
-    for (const field of SAVED_FORM_FIELDS) {
-      const value = saved[field];
-      if (value !== undefined && value !== null) {
-        Object.assign(merged, { [field]: value });
-      }
-    }
-    if (initial.serviceId) merged.serviceId = initial.serviceId;
-    window.localStorage.setItem(
-      BOOKING_FORM_STORAGE_KEY,
-      JSON.stringify(pickSavedFields(merged))
-    );
-    return merged;
-  } catch {
-    return initial;
-  }
-}
 
 function pickSavedFields(form: BookingForm): SavedBookingForm {
   const saved: SavedBookingForm = {};
@@ -241,10 +221,11 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   const router = useRouter();
 
   const [step, setStep] = useState(1);
+  const [cacheRestored, setCacheRestored] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [shop, setShop] = useState<ShopInfo | null>(null);
   const [form, setForm] = useState<BookingForm>(() =>
-    loadSavedForm({
+    ({
       name: "",
       phone: "",
       address: "",
@@ -308,12 +289,47 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   }, [gcashQrOpen]);
 
   useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(BOOKING_FORM_STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw) as SavedBookingForm;
+          setForm((current) => {
+            const restored = { ...current };
+            for (const field of SAVED_FORM_FIELDS) {
+              const value = saved[field];
+              if (value !== undefined && value !== null) {
+                Object.assign(restored, { [field]: value });
+              }
+            }
+            if (initialServiceId) restored.serviceId = initialServiceId;
+            return restored;
+          });
+        }
+
+        const savedStep = Number(window.localStorage.getItem(BOOKING_STEP_STORAGE_KEY));
+        if (Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= 4) {
+          setStep(savedStep);
+        }
+      } catch {
+        // Storage unavailable or invalid — use the empty booking form.
+      } finally {
+        setCacheRestored(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [initialServiceId]);
+
+  useEffect(() => {
+    if (!cacheRestored) return;
     try {
       window.localStorage.setItem(BOOKING_FORM_STORAGE_KEY, JSON.stringify(pickSavedFields(form)));
+      window.localStorage.setItem(BOOKING_STEP_STORAGE_KEY, String(step));
     } catch {
       // Storage unavailable — ignore.
     }
-  }, [form]);
+  }, [cacheRestored, form, step]);
 
   const selectedService = useMemo(
     () => services.find((service) => service.service_id === form.serviceId) ?? null,
@@ -458,6 +474,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
 
       try {
         window.localStorage.removeItem(BOOKING_FORM_STORAGE_KEY);
+        window.localStorage.removeItem(BOOKING_STEP_STORAGE_KEY);
       } catch {
         // Storage unavailable — ignore.
       }

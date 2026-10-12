@@ -3,6 +3,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 import { LAUNDRY_STATUSES } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -122,7 +123,7 @@ export async function PATCH(
 
     if (order_status !== undefined) {
       const [currentRows] = await connection.execute<RowDataPacket[]>(
-        "SELECT order_status, pickup_date, load_type FROM laundry_orders WHERE order_id = ? FOR UPDATE",
+        "SELECT order_reference, order_status, pickup_date, load_type, total_amount, requested_payment_method FROM laundry_orders WHERE order_id = ? FOR UPDATE",
         [orderId]
       );
 
@@ -236,6 +237,27 @@ export async function PATCH(
         "INSERT INTO order_status_history (order_id, status, note) VALUES (?, ?, ?)",
         [orderId, order_status, note]
       );
+      if (currentStatus === "Pending" && order_status === "Accepted") {
+        const [paymentRows] = await connection.execute<RowDataPacket[]>(
+          "SELECT payment_id FROM payments WHERE order_id = ? ORDER BY payment_id DESC LIMIT 1 FOR UPDATE",
+          [orderId]
+        );
+        if (paymentRows.length === 0) {
+          await connection.execute(
+            `INSERT INTO payments
+              (order_id, amount, payment_method, payment_status, payment_date)
+             VALUES (?, ?, ?, 'Pending', NULL)`,
+            [orderId, currentRow.total_amount, currentRow.requested_payment_method]
+          );
+        }
+      }
+      await writeAuditLog(connection, {
+        adminId: session.admin_id,
+        action: "Updated order status",
+        tableName: "laundry_orders",
+        orderReference: currentRow.order_reference,
+        details: { status: order_status, note },
+      });
     }
 
     if (pickup_date !== undefined) {

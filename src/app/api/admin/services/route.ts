@@ -3,6 +3,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 import { SERVICE_ICONS } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,12 @@ export async function POST(request: Request) {
       "INSERT INTO services_offered (name, description, starting_price, icon, is_active) VALUES (?, ?, ?, ?, ?)",
       [name, description, price, icon, isActive ? 1 : 0]
     );
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Created service",
+      tableName: "services_offered",
+      details: { service_id: result.insertId, name, starting_price: price, is_active: isActive },
+    });
 
     return NextResponse.json({ success: true, service_id: result.insertId });
   } catch {

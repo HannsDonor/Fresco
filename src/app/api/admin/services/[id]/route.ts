@@ -3,6 +3,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 import { SERVICE_ICONS } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +144,12 @@ export async function PATCH(
         { status: 404 }
       );
     }
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Updated service",
+      tableName: "services_offered",
+      details: { service_id: serviceId, fields: updates.map((update) => update.split(" = ")[0]) },
+    });
 
     return NextResponse.json({ success: true, service_id: serviceId });
   } catch {
@@ -179,6 +186,12 @@ export async function DELETE(
         { status: 404 }
       );
     }
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Deleted service",
+      tableName: "services_offered",
+      details: { service_id: serviceId },
+    });
     return NextResponse.json({ success: true, service_id: serviceId });
   } catch (err) {
     if (err instanceof Error && "code" in err && err.code === "ER_ROW_IS_REFERENCED_2") {

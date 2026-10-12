@@ -3,6 +3,7 @@ import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 import { SHOP_DAYS, type ShopDay } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -241,6 +242,12 @@ export async function PATCH(request: Request) {
       `UPDATE shop_information SET ${updates.join(", ")} WHERE shop_id = ?`,
       params
     );
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Updated shop information",
+      tableName: "shop_information",
+      details: { shop_id: shopId, fields: updates.map((update) => update.split(" = ")[0]) },
+    });
 
     return NextResponse.json({ success: true, shop_id: shopId });
   } catch {

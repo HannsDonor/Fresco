@@ -4,6 +4,7 @@ import path from "node:path";
 import type { RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -86,6 +87,12 @@ export async function POST(request: Request) {
       [publicPath]
     );
     await removeStoredFile(previous);
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Uploaded GCash QR code",
+      tableName: "shop_information",
+      details: { path: publicPath },
+    });
   } catch {
     return NextResponse.json(
       { error: "Failed to save the GCash QR code." },
@@ -108,6 +115,11 @@ export async function DELETE() {
       "UPDATE shop_information SET gcash_qr_path = NULL ORDER BY shop_id ASC LIMIT 1"
     );
     await removeStoredFile(previous);
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Removed GCash QR code",
+      tableName: "shop_information",
+    });
   } catch {
     return NextResponse.json(
       { error: "Failed to remove the GCash QR code." },

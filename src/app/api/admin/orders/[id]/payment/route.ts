@@ -3,6 +3,7 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +74,7 @@ export async function PATCH(
 
   try {
     const [orderRows] = await pool.query<RowDataPacket[]>(
-      "SELECT order_id FROM laundry_orders WHERE order_id = ?",
+      "SELECT order_id, order_reference FROM laundry_orders WHERE order_id = ?",
       [orderId]
     );
     if (orderRows.length === 0) {
@@ -124,6 +125,14 @@ export async function PATCH(
         [orderId, finalAmount, finalMethod, finalStatus, paymentDate]
       );
     }
+
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: existing ? "Updated order payment" : "Created order payment",
+      tableName: "payments",
+      orderReference: orderRows[0].order_reference,
+      details: { order_id: orderId, amount, payment_method, payment_status },
+    });
 
     return NextResponse.json({ success: true, order_id: orderId });
   } catch {

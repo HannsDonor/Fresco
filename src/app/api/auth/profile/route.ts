@@ -9,6 +9,7 @@ import {
   SESSION_COOKIE,
   SESSION_MAX_AGE,
 } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,12 @@ export async function PATCH(request: Request) {
         [name, username, session.admin_id]
       );
     }
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Updated admin profile",
+      tableName: "admins",
+      details: { name_changed: name !== admin.name, username_changed: username !== admin.username, password_changed: Boolean(newPassword) },
+    });
 
     const token = createSessionToken({
       admin_id: session.admin_id,

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed:admin": "node --env-file-if-exists=.env.local scripts/create-admin.mjs",
-    "migrate:capacity": "node --env-file-if-exists=.env.local scripts/migrate-add-capacity-settings.mjs"
+    "migrate:capacity": "node --env-file-if-exists=.env.local scripts/migrate-add-capacity-settings.mjs",
+    "migrate:audit-logs": "node --env-file-if-exists=.env.local scripts/migrate-add-audit-logs.mjs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

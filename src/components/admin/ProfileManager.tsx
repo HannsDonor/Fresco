@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   RefreshCw,
   Save,
+  ScrollText,
   UserRound,
   UserRoundCheck,
 } from "lucide-react";
@@ -16,6 +17,17 @@ import {
 interface Banner {
   type: "success" | "error";
   text: string;
+}
+
+interface AuditLog {
+  audit_id: number;
+  action: string;
+  table_name: string;
+  order_reference: string | null;
+  details: Record<string, unknown> | null;
+  created_at: string;
+  admin_name: string;
+  admin_username: string;
 }
 
 const inputClasses =
@@ -33,6 +45,9 @@ export default function ProfileManager() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [auditError, setAuditError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +72,30 @@ export default function ProfileManager() {
     }
 
     fetchProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchAuditLogs() {
+      try {
+        const response = await fetch("/api/admin/audit-logs?limit=50");
+        const json = await response.json().catch(() => null);
+        if (cancelled) return;
+        if (!response.ok || !json?.success) {
+          setAuditError(true);
+          return;
+        }
+        setAuditLogs(json.logs ?? []);
+      } catch {
+        if (!cancelled) setAuditError(true);
+      } finally {
+        if (!cancelled) setAuditLoading(false);
+      }
+    }
+    fetchAuditLogs();
     return () => {
       cancelled = true;
     };
@@ -297,6 +336,58 @@ export default function ProfileManager() {
               )}
             </button>
           </div>
+
+          <section className="lg:col-span-2 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-brand-100">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+                  <ScrollText className="h-4 w-4 text-brand-500" />
+                  Audit Log
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Recent administrative changes recorded in the system.
+                </p>
+              </div>
+              <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                {auditLogs.length} records
+              </span>
+            </div>
+
+            {auditLoading ? (
+              <p className="mt-6 text-sm text-slate-500">Loading audit history...</p>
+            ) : auditError ? (
+              <p className="mt-6 text-sm font-medium text-red-600">
+                Unable to load audit history. Please refresh and try again.
+              </p>
+            ) : auditLogs.length === 0 ? (
+              <p className="mt-6 text-sm text-slate-500">No administrative changes recorded yet.</p>
+            ) : (
+              <div className="mt-5 max-h-[28rem] overflow-auto rounded-xl border border-slate-100">
+                <table className="w-full min-w-[680px] text-left text-sm">
+                  <thead className="sticky top-0 z-10 border-b border-slate-100 bg-white text-xs uppercase tracking-wide text-slate-400">
+                    <tr>
+                      <th className="px-3 py-3 font-semibold">Date</th>
+                      <th className="px-3 py-3 font-semibold">Admin</th>
+                      <th className="px-3 py-3 font-semibold">Action</th>
+                      <th className="px-3 py-3 font-semibold">Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {auditLogs.map((log) => (
+                      <tr key={log.audit_id} className="text-slate-600">
+                        <td className="whitespace-nowrap px-3 py-3">
+                          {new Date(log.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-3">{log.admin_name} ({log.admin_username})</td>
+                        <td className="px-3 py-3 font-semibold text-slate-800">{log.action}</td>
+                        <td className="px-3 py-3">{log.order_reference ?? "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
       )}
     </div>

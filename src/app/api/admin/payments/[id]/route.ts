@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import type { ResultSetHeader } from "mysql2";
+import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import pool from "@/lib/db";
 import { PAYMENT_STATUSES } from "@/lib/constants";
 import { getSession } from "@/lib/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,22 @@ export async function PATCH(
   const payment_date = payment_status === "Paid" ? new Date() : null;
 
   try {
+    const [paymentRows] = await pool.query<RowDataPacket[]>(
+      `SELECT p.payment_id, o.order_reference
+       FROM payments p
+       JOIN laundry_orders o ON o.order_id = p.order_id
+       WHERE p.payment_id = ?
+       LIMIT 1`,
+      [paymentId]
+    );
+    const payment = paymentRows[0];
+    if (!payment) {
+      return NextResponse.json(
+        { success: false, error: "Payment not found." },
+        { status: 404 }
+      );
+    }
+
     const [updateResult] = await pool.execute<ResultSetHeader>(
       "UPDATE payments SET payment_status = ?, payment_date = ? WHERE payment_id = ?",
       [payment_status, payment_date, paymentId]
@@ -55,6 +72,13 @@ export async function PATCH(
         { status: 404 }
       );
     }
+    await writeAuditLog(pool, {
+      adminId: session.admin_id,
+      action: "Updated payment",
+      tableName: "payments",
+      orderReference: payment.order_reference,
+      details: { payment_id: paymentId, payment_status },
+    });
 
     return NextResponse.json({ success: true, payment_id: paymentId });
   } catch {

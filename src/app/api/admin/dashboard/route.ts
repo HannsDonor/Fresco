@@ -72,6 +72,41 @@ export async function GET() {
     );
     const todayOrders = Number(todayRows[0].c);
 
+    const [capacitySettingsRows] = await pool.query<RowDataPacket[]>(
+      `SELECT daily_capacity_kg, small_load_kg, medium_load_kg, large_load_kg
+       FROM shop_information
+       ORDER BY shop_id ASC
+       LIMIT 1`
+    );
+    const capacitySettings = capacitySettingsRows[0];
+    if (!capacitySettings) {
+      return NextResponse.json(
+        { success: false, error: "Shop capacity settings are unavailable." },
+        { status: 500 }
+      );
+    }
+    const [capacityRows] = await pool.query<RowDataPacket[]>(
+      `SELECT COALESCE(SUM(
+         CASE o.load_type
+           WHEN 'Small' THEN ?
+           WHEN 'Medium' THEN ?
+           WHEN 'Large' THEN ?
+           ELSE 0
+         END
+       ), 0) AS used_kg
+       FROM laundry_orders o
+       WHERE o.pickup_date = ?
+         AND o.order_status IN ('Accepted', 'In Progress', 'Ready for Pickup', 'Ready for Delivery')`,
+      [
+        capacitySettings.small_load_kg,
+        capacitySettings.medium_load_kg,
+        capacitySettings.large_load_kg,
+        today,
+      ]
+    );
+    const dailyCapacityKg = Number(capacitySettings.daily_capacity_kg);
+    const usedKg = Number(capacityRows[0]?.used_kg ?? 0);
+
     const [recentRows] = await pool.query<RowDataPacket[]>(
       `${ORDER_SELECT} ORDER BY o.created_at DESC LIMIT 8`
     );
@@ -84,6 +119,12 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       summary: { total, pending, active, readyForPickup, completed, cancelled, todayOrders },
+      capacity: {
+        date: today,
+        usedKg,
+        dailyCapacityKg,
+        remainingKg: Math.max(dailyCapacityKg - usedKg, 0),
+      },
       statusCounts,
       recentOrders: recentRows,
       todayPickups: pickupRows,

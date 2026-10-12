@@ -88,7 +88,12 @@ export async function PATCH(
 
   const { id } = await ctx.params;
 
-  let body: { order_status?: string; note?: string; pickup_date?: string | null };
+  let body: {
+    order_status?: string;
+    note?: string;
+    pickup_date?: string | null;
+    allow_capacity_override?: boolean;
+  };
   try {
     body = await request.json();
   } catch {
@@ -100,7 +105,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid order id." }, { status: 400 });
   }
 
-  const { order_status, pickup_date } = body ?? {};
+  const { order_status, pickup_date, allow_capacity_override } = body ?? {};
   const note =
     typeof body?.note === "string" && body.note.trim() ? body.note.trim() : null;
 
@@ -117,7 +122,7 @@ export async function PATCH(
 
     if (order_status !== undefined) {
       const [currentRows] = await connection.execute<RowDataPacket[]>(
-        "SELECT order_status FROM laundry_orders WHERE order_id = ?",
+        "SELECT order_status, pickup_date, load_type FROM laundry_orders WHERE order_id = ? FOR UPDATE",
         [orderId]
       );
 
@@ -152,6 +157,69 @@ export async function PATCH(
           { success: false, error: "This order has already been reviewed." },
           { status: 400 }
         );
+      }
+
+      if (currentStatus === "Pending" && order_status === "Accepted" && !allow_capacity_override) {
+        const [capacityRows] = await connection.execute<RowDataPacket[]>(
+          `SELECT daily_capacity_kg, small_load_kg, medium_load_kg, large_load_kg
+           FROM shop_information
+           ORDER BY shop_id ASC
+           LIMIT 1
+           FOR UPDATE`
+        );
+        const capacity = capacityRows[0];
+        if (!capacity) {
+          await connection.rollback();
+          return NextResponse.json(
+            { success: false, error: "Shop capacity settings are unavailable." },
+            { status: 500 }
+          );
+        }
+
+        const loadKg = {
+          Small: Number(capacity.small_load_kg),
+          Medium: Number(capacity.medium_load_kg),
+          Large: Number(capacity.large_load_kg),
+        }[currentRow.load_type as "Small" | "Medium" | "Large"];
+        const [usedRows] = await connection.execute<RowDataPacket[]>(
+          `SELECT COALESCE(SUM(
+             CASE o.load_type
+               WHEN 'Small' THEN ?
+               WHEN 'Medium' THEN ?
+               WHEN 'Large' THEN ?
+               ELSE 0
+             END
+           ), 0) AS used_kg
+           FROM laundry_orders o
+           WHERE o.pickup_date = ?
+             AND o.order_status IN ('Accepted', 'In Progress', 'Ready for Pickup', 'Ready for Delivery')`,
+          [
+            capacity.small_load_kg,
+            capacity.medium_load_kg,
+            capacity.large_load_kg,
+            currentRow.pickup_date,
+          ]
+        );
+        const usedKg = Number(usedRows[0]?.used_kg ?? 0);
+        const dailyCapacityKg = Number(capacity.daily_capacity_kg);
+        if (usedKg + loadKg > dailyCapacityKg) {
+          await connection.rollback();
+          return NextResponse.json(
+            {
+              success: false,
+              code: "CAPACITY_EXCEEDED",
+              error: "Accepting this order will exceed the daily capacity.",
+              capacity: {
+                date: currentRow.pickup_date,
+                order_kg: loadKg,
+                used_kg: usedKg,
+                daily_capacity_kg: dailyCapacityKg,
+                resulting_kg: usedKg + loadKg,
+              },
+            },
+            { status: 409 }
+          );
+        }
       }
 
       const [updateResult] = await connection.execute<ResultSetHeader>(

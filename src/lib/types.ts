@@ -68,8 +68,16 @@ export interface DashboardSummary {
   todayOrders: number;
 }
 
+export interface DashboardCapacity {
+  date: string;
+  usedKg: number;
+  dailyCapacityKg: number;
+  remainingKg: number;
+}
+
 export interface DashboardData {
   summary: DashboardSummary;
+  capacity: DashboardCapacity;
   statusCounts: DashboardStatusCount[];
   recentOrders: AdminOrderRow[];
   todayPickups: AdminOrderRow[];
@@ -102,5 +110,9 @@ export interface AdminShopInfo {
   address: string | null;
   gcash_number: string | null;
   gcash_qr_path: string | null;
+  daily_capacity_kg: number;
+  small_load_kg: number;
+  medium_load_kg: number;
+  large_load_kg: number;
   hours: Record<ShopDay, ShopHoursDay>;
 }

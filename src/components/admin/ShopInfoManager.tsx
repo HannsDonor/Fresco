@@ -87,6 +87,10 @@ export default function ShopInfoManager() {
   const [gcashQrPath, setGcashQrPath] = useState<string | null>(null);
   const [uploadingQr, setUploadingQr] = useState(false);
   const [qrInputKey, setQrInputKey] = useState(0);
+  const [dailyCapacityKg, setDailyCapacityKg] = useState(100);
+  const [smallLoadKg, setSmallLoadKg] = useState(3);
+  const [mediumLoadKg, setMediumLoadKg] = useState(6);
+  const [largeLoadKg, setLargeLoadKg] = useState(7);
 
   const [saving, setSaving] = useState(false);
   const [savingGcash, setSavingGcash] = useState(false);
@@ -113,6 +117,10 @@ export default function ShopInfoManager() {
         setGcashNumber(data.gcash_number ?? "");
         setSavedGcashNumber(data.gcash_number ?? "");
         setGcashQrPath(data.gcash_qr_path ?? null);
+        setDailyCapacityKg(data.daily_capacity_kg);
+        setSmallLoadKg(data.small_load_kg);
+        setMediumLoadKg(data.medium_load_kg);
+        setLargeLoadKg(data.large_load_kg);
         const nextClosed = { ...EMPTY_CLOSED };
         for (const day of SHOP_DAYS) {
           const { open, close } = data.hours[day];
@@ -268,6 +276,10 @@ export default function ShopInfoManager() {
         email: email.trim() || null,
         address: address.trim() || null,
         gcash_number: digits || null,
+        daily_capacity_kg: dailyCapacityKg,
+        small_load_kg: smallLoadKg,
+        medium_load_kg: mediumLoadKg,
+        large_load_kg: largeLoadKg,
         hours: SHOP_DAYS.reduce((acc, day) => {
           const isClosed = closedDays[day];
           acc[day] = {
@@ -392,6 +404,7 @@ export default function ShopInfoManager() {
               <Store className="h-5 w-5 text-brand-500" />
               <h2 className="text-base font-bold text-slate-900">Contact Information</h2>
             </div>
+
             <div className="space-y-5 px-6 py-5">
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
@@ -446,6 +459,67 @@ export default function ShopInfoManager() {
                   placeholder="Full shop address"
                   rows={3}
                   className={`${inputClasses} resize-none`}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white shadow-sm ring-1 ring-brand-100">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 px-6 py-4">
+              <Store className="h-5 w-5 text-brand-500" />
+              <h2 className="text-base font-bold text-slate-900">Daily Capacity</h2>
+            </div>
+            <div className="space-y-5 px-6 py-5">
+              <p className="text-xs font-medium leading-relaxed text-slate-500">
+                Set the maximum estimated kilograms the shop can accept for one pickup date.
+                Small, Medium, and Large use the upper end of their displayed ranges, with
+                Large estimated at 7 kg.
+              </p>
+              <div className="grid gap-5 sm:grid-cols-3">
+                {[
+                  { label: "Small", value: smallLoadKg, setValue: setSmallLoadKg },
+                  { label: "Medium", value: mediumLoadKg, setValue: setMediumLoadKg },
+                  { label: "Large", value: largeLoadKg, setValue: setLargeLoadKg },
+                ].map(({ label, value, setValue }) => (
+                  <div key={label}>
+                    <label
+                      htmlFor={`capacity-${label.toLowerCase()}`}
+                      className="mb-2 block text-sm font-semibold text-slate-700"
+                    >
+                      {label} load (kg)
+                    </label>
+                    <input
+                      id={`capacity-${label.toLowerCase()}-kg`}
+                      type="number"
+                      min={1}
+                      max={1000}
+                      step={1}
+                      value={value}
+                      onChange={(event) => {
+                        setValue(Number(event.target.value));
+                        markDirty();
+                      }}
+                      className={inputClasses}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div>
+                <label htmlFor="daily-capacity" className="mb-2 block text-sm font-semibold text-slate-700">
+                  Maximum daily capacity (kg)
+                </label>
+                <input
+                  id="daily-capacity-kg"
+                  type="number"
+                  min={1}
+                  max={1000}
+                  step={1}
+                  value={dailyCapacityKg}
+                  onChange={(event) => {
+                    setDailyCapacityKg(Number(event.target.value));
+                    markDirty();
+                  }}
+                  className={`${inputClasses} sm:max-w-64`}
                 />
               </div>
             </div>

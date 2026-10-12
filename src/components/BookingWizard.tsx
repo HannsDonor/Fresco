@@ -24,6 +24,7 @@ import {
   User,
   WashingMachine,
   Wind,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -258,6 +259,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [gcashCopied, setGcashCopied] = useState(false);
+  const [gcashQrOpen, setGcashQrOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -293,6 +295,17 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!gcashQrOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setGcashQrOpen(false);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [gcashQrOpen]);
 
   useEffect(() => {
     try {
@@ -846,7 +859,12 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                 {form.paymentMethod === "GCash" ? (
                   <div className="rounded-2xl border border-brand-100 bg-brand-50/70 p-4 sm:p-5">
                     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                      <div className="shrink-0 rounded-2xl bg-white p-2 ring-1 ring-brand-100">
+                      <button
+                        type="button"
+                        onClick={() => setGcashQrOpen(true)}
+                        aria-label="View GCash QR code"
+                        className="shrink-0 cursor-zoom-in rounded-2xl bg-white p-2 text-left ring-1 ring-brand-100 transition-shadow hover:ring-2 hover:ring-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      >
                         <Image
                           src={gcashQrPath}
                           alt="GCash QR code"
@@ -854,7 +872,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                           height={400}
                           className="h-36 w-36 object-contain"
                         />
-                      </div>
+                      </button>
                       <div className="text-center sm:text-left">
                         <p className="text-sm font-extrabold text-brand-900">Pay with GCash</p>
                         <p className="mt-1.5 text-sm leading-relaxed text-brand-800">
@@ -1034,6 +1052,36 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
           </div>
         </div>
       </main>
+      {gcashQrOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="GCash QR code"
+          onClick={() => setGcashQrOpen(false)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-[90vw] rounded-3xl bg-white p-3 shadow-2xl sm:p-5"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setGcashQrOpen(false)}
+              aria-label="Close GCash QR code"
+              className="absolute -right-2 -top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-colors hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <Image
+              src={gcashQrPath}
+              alt="GCash QR code enlarged"
+              width={720}
+              height={720}
+              className="max-h-[82vh] max-w-[82vw] object-contain"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

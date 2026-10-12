@@ -20,6 +20,10 @@ interface Payload {
   address?: string | null;
   gcash_number?: string | null;
   gcash_qr_path?: string | null;
+  daily_capacity_kg?: number;
+  small_load_kg?: number;
+  medium_load_kg?: number;
+  large_load_kg?: number;
   hours?: Partial<Record<ShopDay, HoursDay>>;
 }
 
@@ -52,7 +56,9 @@ export async function GET() {
 
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT shop_id, shop_name, phone, email, address, gcash_number, gcash_qr_path, ${SELECT_COLUMNS}
+      `SELECT shop_id, shop_name, phone, email, address, gcash_number, gcash_qr_path,
+              daily_capacity_kg, small_load_kg, medium_load_kg, large_load_kg,
+              ${SELECT_COLUMNS}
        FROM shop_information
        LIMIT 1`
     );
@@ -75,6 +81,10 @@ export async function GET() {
         address: row.address,
         gcash_number: row.gcash_number,
         gcash_qr_path: row.gcash_qr_path,
+        daily_capacity_kg: Number(row.daily_capacity_kg),
+        small_load_kg: Number(row.small_load_kg),
+        medium_load_kg: Number(row.medium_load_kg),
+        large_load_kg: Number(row.large_load_kg),
         hours: buildHours(row),
       },
     });
@@ -170,6 +180,25 @@ export async function PATCH(request: Request) {
     }
     updates.push("gcash_qr_path = ?");
     params.push(value || null);
+  }
+
+  const capacityFields = [
+    ["daily_capacity_kg", body?.daily_capacity_kg, "Daily capacity"],
+    ["small_load_kg", body?.small_load_kg, "Small load"],
+    ["medium_load_kg", body?.medium_load_kg, "Medium load"],
+    ["large_load_kg", body?.large_load_kg, "Large load"],
+  ] as const;
+  for (const [column, rawValue, label] of capacityFields) {
+    if (rawValue === undefined) continue;
+    const value = Number(rawValue);
+    if (!Number.isInteger(value) || value < 1 || value > 1000) {
+      return NextResponse.json(
+        { error: `${label} must be a whole number between 1 and 1000.` },
+        { status: 400 }
+      );
+    }
+    updates.push(`${column} = ?`);
+    params.push(String(value));
   }
 
   if (body?.hours !== undefined && body.hours !== null) {

@@ -33,6 +33,14 @@ interface Feedback {
   text: string;
 }
 
+interface CapacityWarning {
+  date: string;
+  order_kg: number;
+  used_kg: number;
+  daily_capacity_kg: number;
+  resulting_kg: number;
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mt-6">
@@ -135,6 +143,7 @@ export default function OrderDetailsModal({
   const [note, setNote] = useState("");
   const [confirmCancelled, setConfirmCancelled] = useState(false);
   const [confirmDecline, setConfirmDecline] = useState<string | null>(null);
+  const [capacityWarning, setCapacityWarning] = useState<CapacityWarning | null>(null);
   const [updating, setUpdating] = useState(false);
 
   const [payMethod, setPayMethod] = useState<string>("Cash");
@@ -197,7 +206,7 @@ export default function OrderDetailsModal({
     };
   }, [onClose]);
 
-  async function handleStatusUpdate(targetStatus: string) {
+  async function handleStatusUpdate(targetStatus: string, allowCapacityOverride = false) {
     if (!order) return;
     if (targetStatus === order.order_status) return;
 
@@ -218,15 +227,24 @@ export default function OrderDetailsModal({
       const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_status: targetStatus, note: note.trim() || undefined }),
+        body: JSON.stringify({
+          order_status: targetStatus,
+          note: note.trim() || undefined,
+          allow_capacity_override: allowCapacityOverride || undefined,
+        }),
       });
       const json = await response.json().catch(() => null);
+      if (response.status === 409 && json?.code === "CAPACITY_EXCEEDED") {
+        setCapacityWarning(json.capacity as CapacityWarning);
+        return;
+      }
       if (!response.ok) {
         setFeedback({ type: "error", text: json?.error ?? "Failed to update status." });
         return;
       }
       setConfirmCancelled(false);
       setConfirmDecline(null);
+      setCapacityWarning(null);
       setNote("");
       setFeedback({ type: "success", text: `Order status updated to ${targetStatus}.` });
       setReloadTick((tick) => tick + 1);
@@ -518,6 +536,38 @@ export default function OrderDetailsModal({
                         Reject
                       </button>
                     </div>
+
+                    {capacityWarning ? (
+                      <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5">
+                        <div className="flex items-start gap-2.5">
+                          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                          <p className="text-sm leading-relaxed text-amber-800">
+                            This order is estimated at {capacityWarning.order_kg} kg. The selected
+                            date already uses {capacityWarning.used_kg} of{" "}
+                            {capacityWarning.daily_capacity_kg} kg. Accepting it would use{" "}
+                            {capacityWarning.resulting_kg} kg and overbook the shop.
+                          </p>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={updating}
+                            onClick={() => handleStatusUpdate("Accepted", true)}
+                            className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            Accept Anyway
+                          </button>
+                          <button
+                            type="button"
+                            disabled={updating}
+                            onClick={() => setCapacityWarning(null)}
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                          >
+                            Keep Pending
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     {confirmDecline ? (
                       <div className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">

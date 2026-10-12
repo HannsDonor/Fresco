@@ -193,6 +193,42 @@ export default function AdminDashboard() {
             })}
           </div>
 
+          <div className={cardClasses}>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Today&apos;s Capacity</h2>
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Active orders scheduled for {data.capacity.date}
+                </p>
+              </div>
+              <p className="text-lg font-extrabold text-slate-900">
+                {data.capacity.usedKg} / {data.capacity.dailyCapacityKg} kg
+              </p>
+            </div>
+            <div className="px-5 pb-5">
+              <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    data.capacity.usedKg > data.capacity.dailyCapacityKg
+                      ? "bg-red-500"
+                      : data.capacity.usedKg >= data.capacity.dailyCapacityKg
+                        ? "bg-amber-500"
+                        : "bg-brand-500"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (data.capacity.usedKg / Math.max(data.capacity.dailyCapacityKg, 1)) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+              <p className="mt-2 text-xs font-semibold text-slate-500">
+                {data.capacity.remainingKg} kg capacity remaining
+              </p>
+            </div>
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-5">
             <StatusOverview statusCounts={data.statusCounts} total={summary?.total ?? 0} />
             <RecentOrders orders={data.recentOrders} />

@@ -132,9 +132,12 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 export default function OrderTracking({ token }: { token: string }) {
+  const [ready, setReady] = useState(false);
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  useEffect(() => setReady(true), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +199,7 @@ export default function OrderTracking({ token }: { token: string }) {
   const isDeclined = order?.order_status === "Rejected";
 
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-50">
+    <div data-cy="tracking-view" data-ready={ready} className="flex min-h-dvh flex-col bg-brand-50">
       <header className="border-b border-brand-900/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">

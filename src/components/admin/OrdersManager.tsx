@@ -135,7 +135,7 @@ export default function OrdersManager({
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-cy="orders-manager" data-ready={!loading && !error}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
@@ -151,6 +151,7 @@ export default function OrdersManager({
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
+            data-cy="orders-search"
             type="search"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
@@ -324,7 +325,7 @@ export default function OrdersManager({
             </p>
           </div>
           <div className="hidden max-h-[70vh] overflow-auto md:block">
-            <table className="w-full min-w-[1040px] text-left">
+      <table data-cy="orders-table" className="w-full min-w-[1040px] text-left">
               <thead>
                 <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
                   <th className="sticky top-0 z-10 bg-white px-5 py-3">Order Reference</th>

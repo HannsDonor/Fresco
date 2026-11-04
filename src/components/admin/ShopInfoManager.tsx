@@ -309,6 +309,7 @@ export default function ShopInfoManager() {
           </p>
         </div>
         <button
+          data-cy="shop-save"
           type="button"
           disabled={saving || loading || !info}
           onClick={handleSave}
@@ -401,6 +402,7 @@ export default function ShopInfoManager() {
                     Phone
                   </label>
                   <input
+                    data-cy="shop-phone"
                     id="shop-phone"
                     type="text"
                     value={phone}
@@ -419,6 +421,7 @@ export default function ShopInfoManager() {
                     Email
                   </label>
                   <input
+                    data-cy="shop-email"
                     id="shop-email"
                     type="email"
                     value={email}
@@ -438,6 +441,7 @@ export default function ShopInfoManager() {
                   Address
                 </label>
                 <textarea
+                  data-cy="shop-address"
                   id="shop-address"
                   value={address}
                   onChange={(event) => {

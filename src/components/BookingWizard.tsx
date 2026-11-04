@@ -489,7 +489,11 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
   const submitDisabled = submitting || !selectedService;
 
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-50">
+    <div
+      data-cy="booking-wizard"
+      data-ready={cacheRestored}
+      className="flex min-h-dvh flex-col bg-brand-50"
+    >
       <header className="border-b border-brand-900/5 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link href="/" className="flex items-center gap-3">
@@ -570,6 +574,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   <div className="relative">
                     <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                     <input
+                      data-cy="booking-name"
                       id="name"
                       type="text"
                       autoComplete="name"
@@ -595,6 +600,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       +63
                     </span>
                     <input
+                      data-cy="booking-phone"
                       id="phone"
                       type="tel"
                       autoComplete="tel"
@@ -616,6 +622,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   <div className="relative">
                     <MapPin className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-slate-400" />
                     <textarea
+                      data-cy="booking-address"
                       id="address"
                       rows={3}
                       placeholder="e.g. 123 Rizal Street, Brgy. San Isidro"
@@ -643,6 +650,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       const selected = service.service_id === form.serviceId;
                       return (
                         <button
+                          data-cy="service-option"
                           key={service.service_id}
                           type="button"
                           onClick={() => setField("serviceId", service.service_id)}
@@ -689,6 +697,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       const selected = form.loadType === loadType;
                       return (
                         <button
+                          data-cy={`load-type-${loadType}`}
                           key={loadType}
                           type="button"
                           onClick={() => setField("loadType", loadType)}
@@ -743,6 +752,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       const selected = form.fulfillmentMethod === method;
                       return (
                         <button
+                          data-cy={`fulfillment-${method}`}
                           key={method}
                           type="button"
                           onClick={() => setField("fulfillmentMethod", method)}
@@ -778,6 +788,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                   <div className="relative">
                     <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                     <input
+                    data-cy="pickup-date"
                       id="pickupDate"
                       type="date"
                       min={today}
@@ -801,6 +812,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                         const selected = form.pickupTime === slot;
                         return (
                           <button
+                        data-cy="pickup-time-slot"
                             key={slot}
                             type="button"
                             onClick={() => setField("pickupTime", slot)}
@@ -844,6 +856,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                       const selected = form.paymentMethod === method;
                       return (
                         <button
+                          data-cy={`payment-${method}`}
                           key={method}
                           type="button"
                           onClick={() => setField("paymentMethod", method)}
@@ -1036,6 +1049,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
 
               {step < 4 ? (
                 <button
+                  data-cy="booking-continue"
                   type="button"
                   onPointerDown={blurActiveElement}
                   onClick={continueStep}
@@ -1046,6 +1060,7 @@ export default function BookingWizard({ initialServiceId }: { initialServiceId?:
                 </button>
               ) : (
                 <button
+                  data-cy="booking-submit"
                   type="button"
                   onPointerDown={blurActiveElement}
                   onClick={submitOrder}

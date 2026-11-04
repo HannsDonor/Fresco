@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Home, Radar, WashingMachine, LoaderCircle } from "lucide-react";
@@ -41,6 +41,9 @@ export default function TrackLookup() {
   const savedToken = useSyncExternalStore(subscribeToSavedToken, readSavedToken, () => "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => setReady(true), []);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -100,8 +103,9 @@ export default function TrackLookup() {
               status. No account required.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <form data-cy="tracking-form" data-ready={ready} onSubmit={handleSubmit} className="mt-8 space-y-4">
               <input
+                data-cy="tracking-input"
                 key={savedToken}
                 ref={inputRef}
                 type="text"
@@ -119,6 +123,7 @@ export default function TrackLookup() {
                 <p className="text-sm font-medium text-red-600">{error}</p>
               ) : null}
               <button
+                data-cy="tracking-submit"
                 type="submit"
                 disabled={submitting}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"

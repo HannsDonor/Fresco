@@ -1,0 +1,9 @@
+{
+  "phone": "+639171234567",
+  "address": "1 Cypress Test Street",
+  "load_type": "Medium",
+  "fulfillment_method": "Pickup",
+  "requested_payment_method": "Cash",
+  "special_instructions": "Created by Cypress E2E.",
+  "pickup_time": "10:00"
+}

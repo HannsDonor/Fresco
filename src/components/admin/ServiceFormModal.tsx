@@ -95,7 +95,7 @@ export default function ServiceFormModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-slate-900/50" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10">
+      <div data-cy="service-form-modal" className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/10">
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-4">
           <div className="min-w-0">
             <h2 className="text-lg font-extrabold tracking-tight text-slate-900">
@@ -133,6 +133,7 @@ export default function ServiceFormModal({
               Service Name <span className="text-red-500">*</span>
             </label>
             <input
+              data-cy="service-name"
               id="service-name"
               type="text"
               value={name}
@@ -148,6 +149,7 @@ export default function ServiceFormModal({
               Description
             </label>
             <textarea
+              data-cy="service-description"
               id="service-description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
@@ -163,6 +165,7 @@ export default function ServiceFormModal({
                 Starting Price (₱) <span className="text-red-500">*</span>
               </label>
               <input
+                data-cy="service-price"
                 id="service-price"
                 type="number"
                 min="0"
@@ -236,6 +239,7 @@ export default function ServiceFormModal({
             Cancel
           </button>
           <button
+            data-cy="service-save"
             type="button"
             disabled={submitting}
             onClick={handleSubmit}

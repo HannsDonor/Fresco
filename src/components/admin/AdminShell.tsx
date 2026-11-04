@@ -77,6 +77,7 @@ export default function AdminShell({
             </span>
           </Link>
           <button
+            data-cy="admin-logout"
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close menu"

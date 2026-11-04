@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, LockKeyhole, Eye, EyeOff, LoaderCircle } from "lucide-react";
 
 export default function AdminLoginForm() {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => setReady(true), []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,7 +52,7 @@ export default function AdminLoginForm() {
     "w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-12 pr-11 text-[15px] text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition-colors focus:border-brand-400 focus:ring-4 focus:ring-brand-500/10";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form data-cy="login-form" data-ready={ready} onSubmit={handleSubmit} className="space-y-5">
       {error ? (
         <div
           role="alert"
@@ -69,6 +72,7 @@ export default function AdminLoginForm() {
         <div className="relative">
           <User className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input
+            data-cy="username"
             id="username"
             name="username"
             type="text"
@@ -91,6 +95,7 @@ export default function AdminLoginForm() {
         <div className="relative">
           <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
           <input
+            data-cy="password"
             id="password"
             name="password"
             type={showPassword ? "text" : "password"}
@@ -116,6 +121,7 @@ export default function AdminLoginForm() {
       </div>
 
       <button
+        data-cy="login-button"
         type="submit"
         disabled={loading}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-brand-500/25 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-70"

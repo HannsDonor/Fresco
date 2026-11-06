@@ -19,6 +19,8 @@
 
 # production
 /build
+/public/images/gcash/*
+!/public/images/gcash/.gitkeep
 
 # misc
 .DS_Store

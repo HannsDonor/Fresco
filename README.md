@@ -66,3 +66,7 @@ npm run cy:component:run
 ```
 
 Component specs live in `cypress/component`. Current coverage includes service form validation and requests, plus order and payment status badges.
+
+## QR image storage
+
+In local development, uploaded GCash QR images are stored under `public/images/gcash` and served as static files. On Vercel, uploads use Vercel Blob; create a Blob store from the project's **Storage** tab and connect it to the project so Vercel adds `BLOB_READ_WRITE_TOKEN` to the deployment environment. The QR image is public because customers need to view it during booking. Do not commit uploaded QR files.

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { del as deleteBlob, put } from "@vercel/blob";
+import { randomUUID } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { RowDataPacket } from "mysql2";
@@ -10,8 +12,9 @@ export const dynamic = "force-dynamic";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "images", "gcash");
 const PUBLIC_PREFIX = "/images/gcash/";
+const BLOB_PREFIX = "gcash/";
 const MAX_BYTES = 2 * 1024 * 1024;
-const GENERATED_FILE_PATTERN = /^qrcode-\d+\.[a-z0-9]+$/i;
+const GENERATED_FILE_PATTERN = /^qrcode-[\da-f-]+\.[a-z0-9]+$/i;
 const ALLOWED_TYPES: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
@@ -27,20 +30,62 @@ async function readStoredPath(): Promise<string | null> {
 }
 
 async function removeStoredFile(publicPath: string | null) {
-  if (!publicPath || !publicPath.startsWith(PUBLIC_PREFIX)) return;
-  const filename = publicPath.slice(PUBLIC_PREFIX.length);
-  if (!GENERATED_FILE_PATTERN.test(filename)) return;
-  try {
-    await unlink(path.join(UPLOAD_DIR, filename));
-  } catch {
-    // File already gone — nothing to clean up.
+  if (!publicPath) return;
+
+  if (publicPath.startsWith(PUBLIC_PREFIX)) {
+    const filename = publicPath.slice(PUBLIC_PREFIX.length);
+    if (!GENERATED_FILE_PATTERN.test(filename)) return;
+    try {
+      await unlink(path.join(UPLOAD_DIR, filename));
+    } catch {
+      // The file may already have been removed.
+    }
+    return;
   }
+
+  try {
+    const url = new URL(publicPath);
+    if (
+      url.protocol === "https:" &&
+      url.hostname.endsWith(".blob.vercel-storage.com") &&
+      url.pathname.startsWith(`/${BLOB_PREFIX}`)
+    ) {
+      await deleteBlob(publicPath);
+    }
+  } catch {
+    // Best-effort cleanup; a failed deletion should not undo the DB update.
+  }
+}
+
+function blobStorageUnavailable() {
+  return process.env.VERCEL === "1" && !process.env.BLOB_READ_WRITE_TOKEN;
+}
+
+async function storeQrImage(bytes: Buffer, filename: string, contentType: string) {
+  if (process.env.VERCEL === "1" || process.env.BLOB_READ_WRITE_TOKEN) {
+    const blob = await put(`${BLOB_PREFIX}${filename}`, bytes, {
+      access: "public",
+      addRandomSuffix: true,
+      contentType,
+    });
+    return blob.url;
+  }
+
+  await mkdir(UPLOAD_DIR, { recursive: true });
+  await writeFile(path.join(UPLOAD_DIR, filename), bytes);
+  return `${PUBLIC_PREFIX}${filename}`;
 }
 
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+  if (blobStorageUnavailable()) {
+    return NextResponse.json(
+      { error: "QR image storage is not configured for this deployment." },
+      { status: 503 }
+    );
   }
 
   let form: FormData;
@@ -76,24 +121,26 @@ export async function POST(request: Request) {
   }
 
   const previous = await readStoredPath();
-  const filename = `qrcode-${Date.now()}.${extension}`;
-  const publicPath = `${PUBLIC_PREFIX}${filename}`;
+  const filename = `qrcode-${randomUUID()}.${extension}`;
+  let publicPath: string | null = null;
+  let savedToDatabase = false;
 
   try {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-    await writeFile(path.join(UPLOAD_DIR, filename), bytes);
+    publicPath = await storeQrImage(bytes, filename, String(file.type));
     await pool.execute(
       "UPDATE shop_information SET gcash_qr_path = ? ORDER BY shop_id ASC LIMIT 1",
       [publicPath]
     );
-    await removeStoredFile(previous);
+    savedToDatabase = true;
     await writeAuditLog(pool, {
       adminId: session.admin_id,
       action: "Uploaded GCash QR code",
       tableName: "shop_information",
       details: { path: publicPath },
     });
+    await removeStoredFile(previous);
   } catch {
+    if (!savedToDatabase) await removeStoredFile(publicPath);
     return NextResponse.json(
       { error: "Failed to save the GCash QR code." },
       { status: 500 }
@@ -107,6 +154,12 @@ export async function DELETE() {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+  }
+  if (blobStorageUnavailable()) {
+    return NextResponse.json(
+      { error: "QR image storage is not configured for this deployment." },
+      { status: 503 }
+    );
   }
 
   const previous = await readStoredPath();

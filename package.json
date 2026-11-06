@@ -19,6 +19,7 @@
     "test:e2e": "npm run cy:run"
   },
   "dependencies": {
+    "@vercel/blob": "^2.8.2",
     "bcrypt": "^6.0.0",
     "lucide-react": "^1.45.0",
     "mysql2": "^3.24.4",

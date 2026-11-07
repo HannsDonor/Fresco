@@ -14,7 +14,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        message: "Database connection failed. Check that XAMPP MySQL is running and DB credentials are correct.",
+        message: "Database connection failed. Check the database environment variables and network access.",
       },
       { status: 500 }
     );

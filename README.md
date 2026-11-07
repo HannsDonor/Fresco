@@ -35,11 +35,15 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+### Database environment
+
+The app uses `mysql2` with a shared, bounded connection pool and supports local XAMPP or Aiven MySQL. Copy `.env.local.example` to `.env.local` for local development. For Aiven locally, save the downloaded CA PEM as `certs/ca.pem`; the directory is ignored by Git. For Vercel, configure `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SSL=true`, `DB_SSL_CA`, and `SESSION_SECRET` as server-side environment variables. Paste the CA PEM contents into Vercel's `DB_SSL_CA` value; the local certificate path will not exist in the deployment. Do not use `NEXT_PUBLIC_` for any database setting. `.env*` files are ignored by Git.
+
 ## End-to-end tests
 
-Cypress E2E tests run against a separate MySQL database named `fresco_laundry_test`. They never point the app at the normal `DB_NAME`. The setup script reads only the `CREATE TABLE` and `ALTER TABLE` statements from `fresco_laundry.sql`; it does not import the dump's customer, order, admin, or shop records. It creates a synthetic shop, service, and admin for the tests. The Cypress helper removes each synthetic booking after its test.
+Cypress E2E tests run against a separate MySQL database named `fresco_laundry_test`. They never point the app at the normal `DB_DATABASE` (or legacy `DB_NAME`). The setup script reads only the `CREATE TABLE` and `ALTER TABLE` statements from `fresco_laundry.sql`; it does not import the dump's customer, order, admin, or shop records. It creates a synthetic shop, service, and admin for the tests. The Cypress helper removes each synthetic booking after its test.
 
-Ensure the local MySQL server is running and the DB connection values in `.env.local` are valid. The E2E scripts use `DB_HOST`, `DB_PORT`, `DB_USER`, and `DB_PASSWORD` from `.env.local` (the application default port is `3306`). Only `DB_NAME` is overridden to `fresco_laundry_test`. The database user needs permission to create `fresco_laundry_test` and its tables.
+Ensure the local MySQL server is running and the DB connection values in `.env.local` are valid. The E2E scripts use `DB_HOST`, `DB_PORT`, `DB_USERNAME` (or legacy `DB_USER`), and `DB_PASSWORD` from `.env.local` (the application default port is `3306`). Both database name variables are overridden to `fresco_laundry_test`. The database user needs permission to create `fresco_laundry_test` and its tables.
 
 The seeded login is test-only (`cypress_admin` / `Cypress_Test_Only_2026!`) and exists only in `fresco_laundry_test`. Do not reuse it outside local tests.
 

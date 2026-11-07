@@ -3,21 +3,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcrypt";
 import mysql from "mysql2/promise";
+import { mysqlConfig } from "./mysql-config.mjs";
 
-const databaseName = process.env.DB_NAME;
+const databaseName = process.env.DB_DATABASE ?? process.env.DB_NAME;
 if (databaseName !== "fresco_laundry_test") {
   throw new Error(
     `Refusing to prepare database "${databaseName ?? "(unset)"}". This script only allows fresco_laundry_test.`
   );
 }
 
-const connection = await mysql.createConnection({
-  host: process.env.DB_HOST ?? "localhost",
-  port: Number(process.env.DB_PORT ?? 3306),
-  user: process.env.DB_USER ?? "root",
-  password: process.env.DB_PASSWORD ?? "",
-  multipleStatements: false,
-});
+const connection = await mysql.createConnection(mysqlConfig(undefined, { multipleStatements: false }));
 
 try {
   await connection.query(
